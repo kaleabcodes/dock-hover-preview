@@ -8,7 +8,7 @@ Hover a running app in the dock to see its open windows — then switch, peek
 or close them without leaving the dock.
 
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE)
-[![GNOME Shell 50](https://img.shields.io/badge/GNOME%20Shell-50-4a86cf.svg?logo=gnome&logoColor=white)](https://www.gnome.org)
+[![GNOME Shell 48–50](https://img.shields.io/badge/GNOME%20Shell-48%20%7C%2049%20%7C%2050-4a86cf.svg?logo=gnome&logoColor=white)](https://www.gnome.org)
 [![Release](https://github.com/kaleabcodes/dock-hover-preview/actions/workflows/release.yml/badge.svg)](https://github.com/kaleabcodes/dock-hover-preview/actions/workflows/release.yml)
 
 ![Window previews above the dock](screenshots/preview.png)
@@ -29,7 +29,7 @@ or close them without leaving the dock.
 
 ## Installation
 
-Requires **GNOME Shell 50**.
+Requires **GNOME Shell 48, 49 or 50** (e.g. Ubuntu 25.04 or newer, Fedora 42 or newer).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kaleabcodes/dock-hover-preview/main/install.sh | bash

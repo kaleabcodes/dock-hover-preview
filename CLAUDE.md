@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A GNOME Shell extension (GJS, ES modules, **GNOME Shell 50 / Wayland only**) that shows live window previews when hovering a running app's dock icon. UUID: `dock-hover-preview@kaleabcodes.dev`. Settings schema: `org.gnome.shell.extensions.dock-hover-preview`.
+A GNOME Shell extension (GJS, ES modules, **GNOME Shell 48–50**, developed and tested on 50 / Wayland) that shows live window previews when hovering a running app's dock icon. UUID: `dock-hover-preview@kaleabcodes.dev`. Settings schema: `org.gnome.shell.extensions.dock-hover-preview`.
 
 It must stay **independent of any dock extension**. It works with Dash to Dock, Ubuntu Dock and the built-in dash only through GNOME Shell's own classes. Don't import from or name-match Dash to Dock internals.
 
@@ -44,6 +44,10 @@ The code is split so that each file owns one concern. `extension.js` is the only
 - **`windowCard.js`**: one card. The thumbnail is a `Clutter.Clone` of `win.get_compositor_private()`, offset by the buffer rect minus the frame rect and clipped, so shadows and invisible borders are hidden. Left click activates the window, or minimizes it if it's focused; middle click closes it (`button_mask` includes TWO).
 - **`windowPeek.js`**: eases other windows' actors on the active workspace (NORMAL/DIALOG/UTILITY types) to opacity 0 and restores them. Clones ignore the source actor's opacity, so thumbnails stay visible while peeking.
 - **`prefs.js`**: libadwaita window with Behavior, Appearance and About pages. It reads `metadata['version-name']`; there is no `version` key, because extensions.gnome.org assigns versions.
+
+### Version support
+
+`metadata.json` declares 48, 49 and 50; the APIs used were checked against the 48.0 and 49.0 sources. The floor is 48 because `St.BoxLayout`'s `orientation` property (used by `PreviewPopup` and `WindowCard`) doesn't exist in 47. Supporting 47 would need a fallback to the old `vertical` property. Only GNOME 50 is available locally for runtime testing.
 
 ### GNOME 50 pitfalls already hit (don't regress)
 
