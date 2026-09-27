@@ -1,0 +1,102 @@
+# Publishes a new version to extensions.gnome.org and GitHub Releases.
+#
+# Trigger: push a tag like v1.1  (git tag v1.1 && git push origin v1.1)
+#          or run it manually from the Actions tab.
+#
+# Needs repository secrets EGO_USERNAME and EGO_PASSWORD (your
+# extensions.gnome.org login). Uploading means you accept the
+# extensions.gnome.org terms of service: https://extensions.gnome.org/upload/
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version name shown to users (e.g. 1.1)'
+        required: true
+
+permissions:
+  contents: write # to create the GitHub release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Work out version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            version="$INPUT_VERSION"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check sources
+        run: |
+          sudo apt-get install -y --no-install-recommends libglib2.0-bin >/dev/null
+          glib-compile-schemas --strict --dry-run schemas/
+          for f in *.js; do
+            cp "$f" "/tmp/$f.mjs" && node --check "/tmp/$f.mjs"
+          done
+
+      - name: Build zip
+        id: pack
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: echo "zip=$(./pack.sh "$VERSION")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to extensions.gnome.org
+        env:
+          EGO_USERNAME: ${{ secrets.EGO_USERNAME }}
+          EGO_PASSWORD: ${{ secrets.EGO_PASSWORD }}
+          ZIP: ${{ steps.pack.outputs.zip }}
+        run: |
+          if [ -z "$EGO_USERNAME" ] || [ -z "$EGO_PASSWORD" ]; then
+            echo "::error::Set the EGO_USERNAME and EGO_PASSWORD repository secrets"
+            exit 1
+          fi
+
+          login=$(jq -n --arg login "$EGO_USERNAME" --arg password "$EGO_PASSWORD" \
+            '{login: $login, password: $password}' |
+            curl -sS --fail-with-body -X POST \
+              -H 'Content-Type: application/json' --data @- \
+              https://extensions.gnome.org/api/v1/accounts/login/) || {
+            echo "::error::extensions.gnome.org login failed: $login"
+            exit 1
+          }
+          # The token is either a string or an object holding one.
+          token=$(echo "$login" | jq -r '.token | if type == "object" then .token else . end // empty')
+          if [ -z "$token" ]; then
+            echo "::error::No token in login response"
+            exit 1
+          fi
+          echo "::add-mask::$token"
+
+          response=$(curl -sS --fail-with-body -X POST \
+            -H "Authorization: Token $token" \
+            -F "source=@$ZIP" \
+            -F shell_license_compliant=true \
+            -F tos_compliant=true \
+            https://extensions.gnome.org/api/v1/extensions) || {
+            echo "::error::Upload failed: $response"
+            exit 1
+          }
+          echo "Uploaded: $response"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          ZIP: ${{ steps.pack.outputs.zip }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && tag="v$VERSION"
+          gh release create "$tag" "$ZIP" --title "v$VERSION" --generate-notes \
+            --target "$GITHUB_SHA"

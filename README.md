@@ -116,14 +116,28 @@ Watch the shell log with:
 journalctl -f -o cat _COMM=gnome-shell
 ```
 
-To build the zip for extensions.gnome.org:
+To build the zip for extensions.gnome.org (written to `dist/`):
 
 ```bash
-gnome-extensions pack --force \
-  --extra-source=iconTracker.js --extra-source=previewPopup.js \
-  --extra-source=windowCard.js --extra-source=windowPeek.js \
-  --extra-source=util.js --extra-source=LICENSE
+./pack.sh          # or ./pack.sh 1.1 to set the version name
 ```
+
+## Releasing
+
+Pushing a version tag publishes the extension automatically: the
+[Release workflow](.github/workflows/release.yml) checks the sources, builds
+the zip, uploads it to extensions.gnome.org and creates a GitHub release.
+
+```bash
+git tag v1.1
+git push origin v1.1
+```
+
+You can also run it from the **Actions** tab (Release → Run workflow).
+
+It needs two repository secrets (Settings → Secrets and variables →
+Actions): `EGO_USERNAME` and `EGO_PASSWORD`, your extensions.gnome.org login.
+Each upload goes through the extensions.gnome.org review before users get it.
 
 ## License
 
