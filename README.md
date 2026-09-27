@@ -32,10 +32,22 @@ uses only GNOME Shell's own APIs and doesn't depend on any other extension.
 
 ## Installation
 
+### Quick install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kaleabcodes/dock-hover-preview/main/install.sh | bash
+```
+
+This downloads the latest version, installs it into
+`~/.local/share/gnome-shell/extensions` and enables it. Then **log out and
+back in**: on Wayland, GNOME only loads new extensions at login.
+
+Run the same command again to update.
+
 ### From extensions.gnome.org
 
-Install it from [extensions.gnome.org](https://extensions.gnome.org) by
-searching for **Dock Hover Preview**.
+Coming soon to [extensions.gnome.org](https://extensions.gnome.org). Until
+then, use the quick install above.
 
 ### From source
 
@@ -45,12 +57,16 @@ cd dock-hover-preview
 ./install.sh
 ```
 
-Log out and back in (on Wayland, GNOME only loads new extensions at login),
-then enable it:
+This links the folder into your extensions directory, so your changes apply
+at your next login. Log out and back in to start it.
+
+### Uninstall
 
 ```bash
-gnome-extensions enable dock-hover-preview@kaleabcodes.dev
+curl -fsSL https://raw.githubusercontent.com/kaleabcodes/dock-hover-preview/main/install.sh | bash -s -- --uninstall
 ```
+
+Or run `./install.sh --uninstall` from a clone.
 
 ## Settings
 
@@ -93,10 +109,6 @@ The project layout:
 | `prefs.js` | Settings window |
 | `schemas/` | Settings definitions |
 | `stylesheet.css` | Popup styling |
-
-`./install.sh` compiles the settings schema and links this folder into
-`~/.local/share/gnome-shell/extensions`, so your edits take effect at your
-next login.
 
 To test without logging out, run a nested GNOME Shell in a window:
 
@@ -145,5 +157,4 @@ Each upload goes through the extensions.gnome.org review before users get it.
 
 ## Author
 
-Kaleab Tesfaye · [kaleabcodes.dev](https://kaleabcodes.dev) ·
-[kaleabcodes@gmail.com](mailto:kaleabcodes@gmail.com)
+Kaleab Tesfaye · [kaleabcodes@gmail.com](mailto:kaleabcodes@gmail.com)
