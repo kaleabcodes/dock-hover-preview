@@ -71,6 +71,8 @@ export default class DockHoverPreviewExtension extends Extension {
         this._popup = null;
 
         this._peek = null;
+        this._showTimer = this._hideTimer = null;
+        this._peekTimer = this._peekEndTimer = null;
         this._settings = null;
     }
 

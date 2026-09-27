@@ -5,6 +5,7 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 
 const AUTHOR = 'Kaleab Tesfaye';
 const EMAIL = 'kaleabcodes@gmail.com';
+const WEBSITE = 'https://kaleabcodes.dev';
 
 export default class DockHoverPreviewPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -99,13 +100,14 @@ export default class DockHoverPreviewPreferences extends ExtensionPreferences {
         });
         info.add(new Adw.ActionRow({
             title: 'Version',
-            subtitle: `${this.metadata.version}`,
+            subtitle: this.metadata['version-name'] ?? `${this.metadata.version ?? ''}`,
         }));
         info.add(new Adw.ActionRow({title: 'Author', subtitle: AUTHOR}));
         page.add(info);
 
         const links = new Adw.PreferencesGroup({title: 'Contact'});
-        links.add(linkRow(window, 'Website', this.metadata.url, this.metadata.url));
+        links.add(linkRow(window, 'Website', WEBSITE, WEBSITE));
+        links.add(linkRow(window, 'Source code', this.metadata.url, this.metadata.url));
         links.add(linkRow(window, 'Email', EMAIL, `mailto:${EMAIL}`));
         page.add(links);
 

@@ -2,8 +2,10 @@
   "uuid": "dock-hover-preview@kaleabcodes.dev",
   "name": "Dock Hover Preview",
   "description": "Shows live window previews when hovering running apps in the dock. Works with the built-in dash, Ubuntu Dock and Dash to Dock.",
-  "shell-version": ["50"],
+  "shell-version": [
+    "50"
+  ],
   "settings-schema": "org.gnome.shell.extensions.dock-hover-preview",
-  "url": "https://kaleabcodes.dev",
-  "version": 2
+  "url": "https://github.com/kaleabcodes/dock-hover-preview",
+  "version-name": "1.0"
 }
