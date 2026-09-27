@@ -49,6 +49,10 @@ The code is split so that each file owns one concern. `extension.js` is the only
 
 `metadata.json` declares 48, 49 and 50; the APIs used were checked against the 48.0 and 49.0 sources. The floor is 48 because `St.BoxLayout`'s `orientation` property (used by `PreviewPopup` and `WindowCard`) doesn't exist in 47. Supporting 47 would need a fallback to the old `vertical` property. Only GNOME 50 is available locally for runtime testing.
 
+### Theming (light and dark)
+
+`stylesheet.css` is the dark theme plus all layout, with every color set explicitly. `stylesheet-light.css` `@import`s it and overrides colors; GNOME 48–50 loads it by itself when the shell is light and reloads it on a switch. The popup **background** isn't in either stylesheet: `PreviewPopup._syncBackground()` sets it inline so the `background-opacity` setting applies, picking a light or dark base from `Main.getStyleVariant()`. It re-runs on every `open()`, so a theme switch applies the next time the popup opens. To test light, use `--mode=ubuntu` with Ubuntu's real Light appearance (`gtk-theme 'Yaru-purple'` and `color-scheme 'default'`), and save and restore both keys. The plain `user` mode never goes light, and Ubuntu mode rewrites `color-scheme` to match a `*-dark` gtk theme. Also check that the installed extension is a symlink to the repo (`./install.sh`): the curl installer leaves a copy, which silently runs old code.
+
 ### GNOME 50 pitfalls already hit (don't regress)
 
 - **Popup placement**: `get_preferred_size()` is wrong (about 18×18) before the first layout. `PreviewPopup` re-runs `_reposition()` on `notify::size`, and raises itself with `set_child_above_sibling` on open, because the dock may be re-added to chrome after it. Removing either puts the popup off-screen or behind the dock.

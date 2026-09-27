@@ -1,0 +1,42 @@
+/* Dock Hover Preview — light theme. GNOME loads this instead of
+ * stylesheet.css when the shell is light; it reuses the layout there and
+ * overrides colors. The light popup background is set in previewPopup.js. */
+
+@import url("stylesheet.css");
+
+.dhp-popup {
+  color: #1e1e22;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.dhp-card:hover,
+.dhp-card:focus {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.dhp-card:active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dhp-card:focused {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.dhp-title {
+  color: #1e1e22;
+}
+
+.dhp-badge {
+  color: #1e1e22;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.dhp-close {
+  color: #3d3d42;
+}
+
+.dhp-close:hover {
+  background-color: rgba(224, 27, 36, 0.9);
+  color: #ffffff;
+}

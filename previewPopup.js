@@ -7,6 +7,8 @@ import {debug} from './util.js';
 import {WindowCard} from './windowCard.js';
 
 const SLIDE_DISTANCE = 8;
+const DARK_BACKGROUND = [28, 28, 30];
+const LIGHT_BACKGROUND = [250, 250, 251];
 const GAP_FROM_ICON = 8;
 const MIN_PREVIEW_WIDTH = 80;
 const CARD_CHROME = 24; // card padding + spacing around each thumbnail
@@ -58,6 +60,7 @@ export const PreviewPopup = GObject.registerClass({
 
     open(icon, app, windows) {
         const wasOpen = this.isOpen;
+        this._syncBackground(); // picks up a light/dark switch since last time
         this._icon = icon;
         this._app = app;
         this._side = getDockSide(icon);
@@ -154,9 +157,13 @@ export const PreviewPopup = GObject.registerClass({
         this.destroy_all_children();
     }
 
+    // The background is set here, not in the stylesheet, so the
+    // "background-opacity" setting can apply. Its base color follows the
+    // shell's light/dark style (the stylesheets handle everything else).
     _syncBackground() {
         const alpha = this._settings.get_int('background-opacity') / 100;
-        this.style = `background-color: rgba(28, 28, 30, ${alpha});`;
+        const [r, g, b] = Main.getStyleVariant() === 'light' ? LIGHT_BACKGROUND : DARK_BACKGROUND;
+        this.style = `background-color: rgba(${r}, ${g}, ${b}, ${alpha});`;
     }
 
     _reposition() {

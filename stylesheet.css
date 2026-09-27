@@ -1,5 +1,12 @@
-/* Popup background colour is set from the "background-opacity" setting. */
+/* Dock Hover Preview — dark theme, and the layout shared by both themes.
+ *
+ * GNOME loads stylesheet-light.css instead when the shell is light (e.g.
+ * Ubuntu with the default color scheme); it imports this file and only
+ * overrides colors. The popup background is set in previewPopup.js so the
+ * "background-opacity" setting can apply. */
+
 .dhp-popup {
+  color: #f6f5f4;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 8px;
