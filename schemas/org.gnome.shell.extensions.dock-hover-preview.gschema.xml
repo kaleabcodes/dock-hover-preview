@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.dock-hover-preview"
+          path="/org/gnome/shell/extensions/dock-hover-preview/">
+
+    <!-- Behavior: timing -->
+    <key name="hover-delay" type="i">
+      <range min="0" max="2000"/>
+      <default>300</default>
+      <summary>Hover delay (ms)</summary>
+      <description>How long the pointer must rest on an icon before the preview opens.</description>
+    </key>
+    <key name="hide-delay" type="i">
+      <range min="0" max="2000"/>
+      <default>250</default>
+      <summary>Hide delay (ms)</summary>
+      <description>How long the preview stays open after the pointer leaves it.</description>
+    </key>
+
+    <!-- Behavior: windows -->
+    <key name="current-workspace-only" type="b">
+      <default>true</default>
+      <summary>Current workspace only</summary>
+      <description>Only preview windows on the active workspace.</description>
+    </key>
+    <key name="click-focused-minimizes" type="b">
+      <default>true</default>
+      <summary>Clicking the focused window minimizes it</summary>
+      <description>Clicking the preview of the window that already has focus minimizes it instead.</description>
+    </key>
+    <key name="middle-click-close" type="b">
+      <default>true</default>
+      <summary>Middle-click closes window</summary>
+      <description>Middle-clicking a preview closes that window.</description>
+    </key>
+
+    <!-- Behavior: peek -->
+    <key name="peek-on-hover" type="b">
+      <default>true</default>
+      <summary>Peek at window</summary>
+      <description>Resting on a preview fades out other windows so the window can be seen in place.</description>
+    </key>
+    <key name="peek-delay" type="i">
+      <range min="0" max="3000"/>
+      <default>700</default>
+      <summary>Peek delay (ms)</summary>
+      <description>How long to rest on a preview before peeking.</description>
+    </key>
+
+    <!-- Appearance -->
+    <key name="preview-size" type="i">
+      <range min="100" max="480"/>
+      <default>240</default>
+      <summary>Preview width (px)</summary>
+      <description>Maximum width of each window thumbnail.</description>
+    </key>
+    <key name="show-titles" type="b">
+      <default>true</default>
+      <summary>Show window titles</summary>
+      <description>Show the window title above each preview.</description>
+    </key>
+    <key name="show-app-icon" type="b">
+      <default>true</default>
+      <summary>Show app icon</summary>
+      <description>Show the app icon next to each window title.</description>
+    </key>
+    <key name="show-close-button" type="b">
+      <default>true</default>
+      <summary>Show close button</summary>
+      <description>Show a close button on each preview.</description>
+    </key>
+    <key name="background-opacity" type="i">
+      <range min="0" max="100"/>
+      <default>94</default>
+      <summary>Background opacity (%)</summary>
+      <description>Opacity of the popup background.</description>
+    </key>
+    <key name="animation-duration" type="i">
+      <range min="0" max="500"/>
+      <default>150</default>
+      <summary>Animation duration (ms)</summary>
+      <description>Length of the open/close animation. 0 disables animations.</description>
+    </key>
+  </schema>
+</schemalist>

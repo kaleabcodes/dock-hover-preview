@@ -1,0 +1,67 @@
+/* Popup background colour is set from the "background-opacity" setting. */
+.dhp-popup {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 8px;
+  spacing: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.dhp-card {
+  border-radius: 10px;
+  padding: 6px;
+  border: 1px solid transparent;
+  transition-duration: 100ms;
+}
+
+.dhp-card:hover,
+.dhp-card:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dhp-card:active {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+/* The window that currently has keyboard focus. */
+.dhp-card:focused {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.dhp-card-header {
+  spacing: 6px;
+  padding: 0 2px 6px 2px;
+}
+
+.dhp-title {
+  color: #eeeeee;
+  font-size: 9.5pt;
+}
+
+.dhp-badge {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  padding: 0 6px;
+  font-size: 8pt;
+  font-weight: bold;
+}
+
+.dhp-close {
+  border-radius: 99px;
+  padding: 3px;
+  color: #dddddd;
+}
+
+.dhp-close:hover {
+  background-color: rgba(230, 60, 60, 0.9);
+  color: #ffffff;
+}
+
+.dhp-close StIcon {
+  icon-size: 12px;
+}
+
+.dhp-thumbnail {
+  border-radius: 6px;
+}
