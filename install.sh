@@ -18,7 +18,7 @@ UUID=dock-hover-preview@kaleabcodes.dev
 EXT_DIR="$HOME/.local/share/gnome-shell/extensions"
 DEST="$EXT_DIR/$UUID"
 FILES=(extension.js prefs.js iconTracker.js previewPopup.js windowCard.js
-       windowPeek.js util.js stylesheet.css stylesheet-light.css metadata.json LICENSE)
+       windowPeek.js util.js stylesheet.css metadata.json LICENSE)
 
 # Adds or removes the extension in GNOME's list of enabled extensions, so
 # it's on (or off) from the next login without needing the shell running.

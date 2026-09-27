@@ -1,9 +1,9 @@
-/* Dock Hover Preview — dark theme, and the layout shared by both themes.
+/* Dock Hover Preview.
  *
- * GNOME loads stylesheet-light.css instead when the shell is light (e.g.
- * Ubuntu with the default color scheme); it imports this file and only
- * overrides colors. The popup background is set in previewPopup.js so the
- * "background-opacity" setting can apply. */
+ * Dark colors by default; the popup gets the "dhp-light" class when the
+ * shell is light (set in previewPopup.js on every open), which switches to
+ * the light colors at the end of this file. The popup background is set in
+ * previewPopup.js so the "background-opacity" setting can apply. */
 
 .dhp-popup {
   color: #f6f5f4;
@@ -71,4 +71,43 @@
 
 .dhp-thumbnail {
   border-radius: 6px;
+}
+
+/* ── Light theme ──────────────────────────────────────── */
+
+.dhp-popup.dhp-light {
+  color: #1e1e22;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.dhp-light .dhp-card:hover,
+.dhp-light .dhp-card:focus {
+  background-color: rgba(0, 0, 0, 0.07);
+}
+
+.dhp-light .dhp-card:active {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+.dhp-light .dhp-card:focused {
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+.dhp-light .dhp-title {
+  color: #1e1e22;
+}
+
+.dhp-light .dhp-badge {
+  color: #1e1e22;
+  background-color: rgba(0, 0, 0, 0.09);
+}
+
+.dhp-light .dhp-close {
+  color: #2e2e33;
+}
+
+.dhp-light .dhp-close:hover {
+  background-color: rgba(224, 27, 36, 0.9);
+  color: #ffffff;
 }

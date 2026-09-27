@@ -160,9 +160,20 @@ export const PreviewPopup = GObject.registerClass({
     // The background is set here, not in the stylesheet, so the
     // "background-opacity" setting can apply. Its base color follows the
     // shell's light/dark style (the stylesheets handle everything else).
+    // Colors follow the shell's light/dark style, checked on every open.
+    // The "dhp-light" class switches the stylesheet colors and the base of
+    // the inline background (inline so "background-opacity" can apply)
+    // together, so they can never disagree. Relying on GNOME swapping
+    // extension stylesheets didn't work: it doesn't always reload them.
     _syncBackground() {
+        const light = Main.getStyleVariant() === 'light';
+        if (light)
+            this.add_style_class_name('dhp-light');
+        else
+            this.remove_style_class_name('dhp-light');
+
         const alpha = this._settings.get_int('background-opacity') / 100;
-        const [r, g, b] = Main.getStyleVariant() === 'light' ? LIGHT_BACKGROUND : DARK_BACKGROUND;
+        const [r, g, b] = light ? LIGHT_BACKGROUND : DARK_BACKGROUND;
         this.style = `background-color: rgba(${r}, ${g}, ${b}, ${alpha});`;
     }
 

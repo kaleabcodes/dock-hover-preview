@@ -15,7 +15,7 @@ BUILD=$(mktemp -d)
 trap 'rm -rf "$BUILD"' EXIT
 
 cp extension.js prefs.js iconTracker.js previewPopup.js windowCard.js \
-   windowPeek.js util.js stylesheet.css stylesheet-light.css LICENSE metadata.json "$BUILD/"
+   windowPeek.js util.js stylesheet.css LICENSE metadata.json "$BUILD/"
 mkdir "$BUILD/schemas"
 cp schemas/*.gschema.xml "$BUILD/schemas/"
 
