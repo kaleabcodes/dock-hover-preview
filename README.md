@@ -1,55 +1,45 @@
+<div align="center">
+
 # Dock Hover Preview
 
-Live window previews for the GNOME dock. Hover a running app's icon and see
-thumbnails of its open windows, like the taskbar previews on Windows and
-macOS.
+**Live window previews for the GNOME dock.**
+
+Hover a running app in the dock to see its open windows — then switch, peek
+or close them without leaving the dock.
+
+[![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE)
+[![GNOME Shell 50](https://img.shields.io/badge/GNOME%20Shell-50-4a86cf.svg?logo=gnome&logoColor=white)](https://www.gnome.org)
+[![Release](https://github.com/kaleabcodes/dock-hover-preview/actions/workflows/release.yml/badge.svg)](https://github.com/kaleabcodes/dock-hover-preview/actions/workflows/release.yml)
 
 ![Window previews above the dock](screenshots/preview.png)
 
-Works with the built-in GNOME dash, **Ubuntu Dock** and **Dash to Dock**. It
-uses only GNOME Shell's own APIs and doesn't depend on any other extension.
+</div>
 
 ## Features
 
-- **Live thumbnails** that keep updating while the preview is open
-- **Click** a thumbnail to switch to that window, or click the focused
-  window's thumbnail to minimize it
-- **Close** windows with the × button or a middle-click
-- **Peek**: rest on a thumbnail to fade out the other windows and see that
-  one in place
-- App icon, window title and a highlight on the focused window
-- Workspace number on windows from other workspaces (when showing all
-  workspaces)
-- Works with the dock on any screen edge, and keeps an auto-hiding dock
-  visible while you use the preview
-- Many windows shrink to fit the screen, and minimized windows are dimmed
+- **Live thumbnails** of every window, updating in real time
+- **Peek** — rest on a thumbnail to fade out other windows and see it in place
+- **Quick actions** — click to switch, click again to minimize, middle-click
+  or × to close
+- **Works with any dock** — Dash to Dock, Ubuntu Dock or the built-in dash,
+  on any screen edge
+- **Configurable** — delays, sizes, visible elements, opacity and animations
 
 ![Peeking at a window](screenshots/peek.png)
 
-## Requirements
-
-- GNOME Shell 50
-
 ## Installation
 
-### Quick install
+Requires **GNOME Shell 50**.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kaleabcodes/dock-hover-preview/main/install.sh | bash
 ```
 
-This downloads the latest version, installs it into
-`~/.local/share/gnome-shell/extensions` and enables it. Then **log out and
-back in**: on Wayland, GNOME only loads new extensions at login.
+Then **log out and back in** — on Wayland, GNOME loads new extensions at
+login. Run the same command again to update.
 
-Run the same command again to update.
-
-### From extensions.gnome.org
-
-Coming soon to [extensions.gnome.org](https://extensions.gnome.org). Until
-then, use the quick install above.
-
-### From source
+<details>
+<summary>Install from source</summary>
 
 ```bash
 git clone https://github.com/kaleabcodes/dock-hover-preview.git
@@ -57,104 +47,77 @@ cd dock-hover-preview
 ./install.sh
 ```
 
-This links the folder into your extensions directory, so your changes apply
-at your next login. Log out and back in to start it.
+</details>
 
-### Uninstall
+<details>
+<summary>Uninstall</summary>
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kaleabcodes/dock-hover-preview/main/install.sh | bash -s -- --uninstall
 ```
 
-Or run `./install.sh --uninstall` from a clone.
+</details>
 
-## Settings
+> [!NOTE]
+> Coming soon to [extensions.gnome.org](https://extensions.gnome.org).
 
-Open the settings from the Extensions app, or run:
+## Usage
+
+| Action | Result |
+| --- | --- |
+| Hover a running app's dock icon | Show its window previews |
+| Click a preview | Switch to that window |
+| Click the focused window's preview | Minimize it |
+| Rest on a preview | Peek at the window in place |
+| Middle-click a preview, or click × | Close the window |
+
+## Configuration
+
+Open **Extensions → Dock Hover Preview → Settings**, or run:
 
 ```bash
 gnome-extensions prefs dock-hover-preview@kaleabcodes.dev
 ```
 
+<details>
+<summary>All settings</summary>
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| Hover delay | 300 ms | Time on an icon before the preview opens |
+| Hide delay | 250 ms | Time the preview stays open after the pointer leaves |
+| Current workspace only | On | Hide windows on other workspaces |
+| Click focused window to minimize | On | Clicking the active window's preview minimizes it |
+| Middle-click to close | On | Middle-clicking a preview closes the window |
+| Peek at window | On | Fade out other windows while resting on a preview |
+| Peek delay | 700 ms | Time on a preview before peeking |
+| Preview width | 240 px | Maximum thumbnail width |
+| Show titles / app icon / close button | On | Elements shown on each preview |
+| Background opacity | 94 % | Popup background opacity |
+| Animation duration | 150 ms | `0` turns animations off |
+
 ![Settings window](screenshots/settings.png)
 
-| Page | Setting | Default |
-| --- | --- | --- |
-| Behavior | Hover delay | 300 ms |
-| | Hide delay | 250 ms |
-| | Current workspace only | On |
-| | Click focused window to minimize | On |
-| | Middle-click to close | On |
-| | Peek at window | On |
-| | Peek delay | 700 ms |
-| Appearance | Preview width | 240 px |
-| | Show window titles, app icon, close button | On |
-| | Background opacity | 94 % |
-| | Animation duration (0 turns animations off) | 150 ms |
+</details>
 
-The Appearance page also has a **Reset All Settings** button.
+## Troubleshooting
 
-## Development
+- **Nothing happens on hover** — log out and back in after installing, then
+  check that the extension is enabled:
+  `gnome-extensions info dock-hover-preview@kaleabcodes.dev`
+- **Errors** — check the shell log:
+  `journalctl -b -o cat _COMM=gnome-shell | grep -i dock-hover`
 
-The project layout:
+Still stuck? [Open an issue](https://github.com/kaleabcodes/dock-hover-preview/issues).
 
-| File | Purpose |
-| --- | --- |
-| `extension.js` | Decides when to open and close the preview and peek, and which windows to show |
-| `iconTracker.js` | Detects which dock icon the pointer is over |
-| `previewPopup.js` | The popup: layout, placement next to the icon, animations |
-| `windowCard.js` | One window card: header, live thumbnail, click handling |
-| `windowPeek.js` | Fades other windows out and back in for peek |
-| `util.js` | Debug logging and a timer helper |
-| `prefs.js` | Settings window |
-| `schemas/` | Settings definitions |
-| `stylesheet.css` | Popup styling |
+## Contributing
 
-To test without logging out, run a nested GNOME Shell in a window:
-
-```bash
-dbus-run-session gnome-shell --devkit
-```
-
-Set `DHP_DEBUG=1` to log hover detection and popup placement:
-
-```bash
-DHP_DEBUG=1 dbus-run-session gnome-shell --devkit
-```
-
-Watch the shell log with:
-
-```bash
-journalctl -f -o cat _COMM=gnome-shell
-```
-
-To build the zip for extensions.gnome.org (written to `dist/`):
-
-```bash
-./pack.sh          # or ./pack.sh 1.1 to set the version name
-```
-
-## Releasing
-
-Pushing a version tag publishes the extension automatically: the
-[Release workflow](.github/workflows/release.yml) checks the sources, builds
-the zip, uploads it to extensions.gnome.org and creates a GitHub release.
-
-```bash
-git tag v1.1
-git push origin v1.1
-```
-
-You can also run it from the **Actions** tab (Release → Run workflow).
-
-It needs two repository secrets (Settings → Secrets and variables →
-Actions): `EGO_USERNAME` and `EGO_PASSWORD`, your extensions.gnome.org login.
-Each upload goes through the extensions.gnome.org review before users get it.
+Bug reports, ideas and pull requests are welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for development setup and the release
+process.
 
 ## License
 
-[GPL-2.0-or-later](LICENSE)
+Released under the [GNU General Public License v2.0 or later](LICENSE).
 
-## Author
-
-Kaleab Tesfaye · [kaleabcodes@gmail.com](mailto:kaleabcodes@gmail.com)
+Made by [Kaleab Tesfaye](https://github.com/kaleabcodes).
