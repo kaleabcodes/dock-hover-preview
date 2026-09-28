@@ -76,8 +76,38 @@
 /* ── Media card ───────────────────────────────────────── */
 
 .dhp-media {
-  spacing: 6px;
   padding: 10px 8px 8px 8px;
+}
+
+.dhp-media-column {
+  spacing: 6px;
+}
+
+/* Compact controls under a window's thumbnail. */
+.dhp-media-row {
+  spacing: 8px;
+  padding: 8px 2px 0 2px;
+}
+
+.dhp-media-row .dhp-media-title {
+  font-size: 9.5pt;
+}
+
+.dhp-media-row .dhp-media-artist {
+  font-size: 8.5pt;
+}
+
+.dhp-media-row .dhp-media-controls {
+  spacing: 2px;
+  padding-top: 0;
+}
+
+.dhp-media-row .dhp-media-button {
+  padding: 5px;
+}
+
+.dhp-media-row .dhp-media-play {
+  padding: 6px;
 }
 
 .dhp-media-art {

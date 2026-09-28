@@ -24,3 +24,25 @@ export function playerBelongsToApp(player, app) {
         return false;
     return appId.split(/[._-]/).includes(name);
 }
+
+/**
+ * Which window's card gets the media controls: the one whose title contains
+ * the track title (VLC: "Astrid S - Breathe - VLC media player"; a browser
+ * tab playing the video), otherwise the focused window, otherwise the first.
+ *
+ * @param {string[]} windowTitles
+ * @param {string} trackTitle
+ * @param {number} focusedIndex  -1 when none of the windows has focus
+ * @returns {number} index into windowTitles, or -1 when there are none
+ */
+export function playingWindowIndex(windowTitles, trackTitle, focusedIndex) {
+    if (windowTitles.length === 0)
+        return -1;
+    const track = (trackTitle ?? '').trim().toLowerCase();
+    if (track) {
+        const match = windowTitles.findIndex(t => (t ?? '').toLowerCase().includes(track));
+        if (match >= 0)
+            return match;
+    }
+    return focusedIndex >= 0 ? focusedIndex : 0;
+}

@@ -4,6 +4,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {MediaCard} from './contentCards.js';
+import {playingWindowIndex} from './mediaMatch.js';
 import {debug} from './util.js';
 import {WindowCard} from './windowCard.js';
 
@@ -116,7 +117,13 @@ export const PreviewPopup = GObject.registerClass({
 
         const monitor = Main.layoutManager.findMonitorForActor(this._icon);
         const vertical = this.orientation === Clutter.Orientation.VERTICAL;
-        const extraCards = extras.player ? 1 : 0;
+        // With windows, the controls go inside the playing window's card;
+        // only an app with no windows gets a separate media card.
+        const playerWindow = extras.player
+            ? playingWindowIndex(windows.map(w => w.get_title() ?? ''), extras.player.trackTitle,
+                windows.findIndex(w => w.has_focus()))
+            : -1;
+        const extraCards = extras.player && windows.length === 0 ? 1 : 0;
         const available = (vertical ? monitor.height : monitor.width) * SCREEN_FRACTION -
             extraCards * EXTRA_CARD_WIDTH;
         // Shrink previews when there are too many windows to fit in a row.
@@ -124,20 +131,21 @@ export const PreviewPopup = GObject.registerClass({
             this._settings.get_int('preview-size'),
             available / Math.max(1, windows.length) - CARD_CHROME));
 
-        for (const win of windows) {
+        windows.forEach((win, index) => {
             const card = new WindowCard({
                 win,
                 app: this._app,
                 maxWidth,
                 settings: this._settings,
                 onActivated: () => this.emit('window-activated'),
+                player: index === playerWindow ? extras.player : null,
             });
             card.connect('notify::hover', () =>
                 this.emit('card-hover-changed', card.hover ? win : null));
             this.add_child(card);
-        }
+        });
 
-        if (extras.player)
+        if (extras.player && windows.length === 0)
             this.add_child(new MediaCard(extras.player));
 
         this._reposition();

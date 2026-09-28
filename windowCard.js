@@ -4,7 +4,10 @@ import Pango from 'gi://Pango';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
+import {MediaControls} from './contentCards.js';
+
 const MIN_CARD_WIDTH = 140;
+const MIN_MEDIA_CARD_WIDTH = 230;
 const THUMBNAIL_ASPECT = 0.66; // max height relative to max width
 const APP_ICON_SIZE = 16;
 const MINIMIZED_OPACITY = 150;
@@ -16,7 +19,12 @@ const MINIMIZED_OPACITY = 150;
 // when enabled); middle click closes it (when enabled).
 export const WindowCard = GObject.registerClass(
 class WindowCard extends St.Button {
-    _init({win, app, maxWidth, settings, onActivated}) {
+    /**
+     * @param {object} params
+     * @param {object|null} [params.player]  media player shown in this card
+     *     (the playing window of an app that's playing)
+     */
+    _init({win, app, maxWidth, settings, onActivated, player = null}) {
         super._init({
             style_class: 'dhp-card',
             can_focus: true,
@@ -29,7 +37,8 @@ class WindowCard extends St.Button {
         this._signals = []; // [object, id]
 
         const thumbnail = createThumbnail(win, maxWidth, maxWidth * THUMBNAIL_ASPECT);
-        const cardWidth = Math.max(thumbnail.width, MIN_CARD_WIDTH);
+        // Room for the media row (art, title, three buttons) when it's shown.
+        const cardWidth = Math.max(thumbnail.width, player ? MIN_MEDIA_CARD_WIDTH : MIN_CARD_WIDTH);
 
         const content = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL});
         const header = this._createHeader(win, app, cardWidth);
@@ -42,6 +51,11 @@ class WindowCard extends St.Button {
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
         }));
+        if (player) {
+            const controls = new MediaControls(player, {compact: true});
+            controls.width = cardWidth;
+            content.add_child(controls);
+        }
         this.set_child(content);
 
         this._connect(global.display, 'notify::focus-window', () => this._syncFocused());
