@@ -48,6 +48,22 @@
     </key>
 
     <!-- Appearance -->
+    <key name="show-media-controls" type="b">
+      <default>true</default>
+      <summary>Show media controls</summary>
+      <description>Show album art and play/pause/next buttons for apps playing media.</description>
+    </key>
+    <key name="show-recent-files" type="b">
+      <default>true</default>
+      <summary>Show recent files</summary>
+      <description>List files the app opened recently, to reopen them with a click.</description>
+    </key>
+    <key name="recent-files-count" type="i">
+      <range min="1" max="10"/>
+      <default>5</default>
+      <summary>Recent files</summary>
+      <description>How many recent files to list.</description>
+    </key>
     <key name="preview-size" type="i">
       <range min="100" max="480"/>
       <default>240</default>

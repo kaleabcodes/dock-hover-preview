@@ -51,6 +51,19 @@ export default class DockHoverPreviewPreferences extends ExtensionPreferences {
         peek.add(peekDelay);
         page.add(peek);
 
+        const content = new Adw.PreferencesGroup({
+            title: 'Extra content',
+            description: 'Also shown for apps with no open windows',
+        });
+        content.add(switchRow(settings, 'show-media-controls', 'Media controls',
+            'Album art and play/pause/next for apps playing music or video'));
+        content.add(switchRow(settings, 'show-recent-files', 'Recent files',
+            'Files the app opened recently; click to reopen'));
+        const count = spinRow(settings, 'recent-files-count', 'Number of recent files', null, 1, 10, 1);
+        settings.bind('show-recent-files', count, 'sensitive', Gio.SettingsBindFlags.GET);
+        content.add(count);
+        page.add(content);
+
         return page;
     }
 

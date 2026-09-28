@@ -17,7 +17,7 @@ BRANCH=main
 UUID=dock-hover-preview@kaleabcodes.dev
 EXT_DIR="$HOME/.local/share/gnome-shell/extensions"
 DEST="$EXT_DIR/$UUID"
-FILES=(extension.js prefs.js iconTracker.js previewPopup.js windowCard.js
+FILES=(extension.js prefs.js iconTracker.js previewPopup.js windowCard.js contentCards.js contentSources.js mediaMatch.js recentFiles.js
        windowPeek.js util.js stylesheet.css metadata.json LICENSE)
 
 # Adds or removes the extension in GNOME's list of enabled extensions, so

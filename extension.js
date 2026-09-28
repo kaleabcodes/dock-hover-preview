@@ -1,6 +1,7 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {MediaSource, RecentSource} from './contentSources.js';
 import {IconTracker, hideIconLabel, pinDock} from './iconTracker.js';
 import {PreviewPopup} from './previewPopup.js';
 import {Timer, debug} from './util.js';
@@ -24,6 +25,8 @@ export default class DockHoverPreviewExtension extends Extension {
         this._peekTimer = new Timer();
         this._peekEndTimer = new Timer();
         this._peek = new WindowPeek();
+        this._media = new MediaSource();
+        this._recent = new RecentSource();
         this._pinnedIcon = null;
         this._unpinDock = null;
         this._appSignal = null; // [app, id] while open
@@ -71,6 +74,9 @@ export default class DockHoverPreviewExtension extends Extension {
         this._popup = null;
 
         this._peek = null;
+        this._media.destroy();
+        this._recent.destroy();
+        this._media = this._recent = null;
         this._showTimer = this._hideTimer = null;
         this._peekTimer = this._peekEndTimer = null;
         this._settings = null;
@@ -99,9 +105,11 @@ export default class DockHoverPreviewExtension extends Extension {
 
     _open(icon, app) {
         const windows = this._getWindows(app);
-        debug(`open ${app.get_id()}: ${windows.length} window(s)`);
-        if (windows.length === 0) {
-            // Not running here: let the dock show its usual name tooltip.
+        const extras = this._getExtras(app);
+        debug(`open ${app.get_id()}: ${windows.length} window(s), ` +
+            `media=${Boolean(extras.player)}, recent=${extras.recents.length}`);
+        if (windows.length === 0 && !extras.player && extras.recents.length === 0) {
+            // Nothing to show: let the dock show its usual name tooltip.
             this._close(true);
             return;
         }
@@ -110,7 +118,16 @@ export default class DockHoverPreviewExtension extends Extension {
         this._watchApp(app, icon);
         this._pin(icon);
         hideIconLabel(icon);
-        this._popup.open(icon, app, windows);
+        this._popup.open(icon, app, windows, extras);
+    }
+
+    // Media controls and recent files, per the settings.
+    _getExtras(app) {
+        return {
+            player: this._settings.get_boolean('show-media-controls') ? this._media.playerFor(app) : null,
+            recents: this._settings.get_boolean('show-recent-files')
+                ? this._recent.forApp(app, this._settings.get_int('recent-files-count')) : [],
+        };
     }
 
     _close(animate) {
@@ -154,11 +171,12 @@ export default class DockHoverPreviewExtension extends Extension {
         this._unwatchApp();
         const id = app.connect('windows-changed', () => {
             const windows = this._getWindows(app);
-            if (windows.length === 0) {
+            const extras = this._getExtras(app);
+            if (windows.length === 0 && !extras.player && extras.recents.length === 0) {
                 this._close(true);
             } else if (this._popup.icon === icon) {
                 this._endPeek();
-                this._popup.setWindows(windows);
+                this._popup.setWindows(windows, extras);
             }
         });
         this._appSignal = [app, id];

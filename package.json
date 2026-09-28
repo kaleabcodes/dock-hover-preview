@@ -1,0 +1,9 @@
+{
+  "name": "dock-hover-preview",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only: lets Node run the unit tests. Not part of the extension.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

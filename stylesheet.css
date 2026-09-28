@@ -73,6 +73,82 @@
   border-radius: 6px;
 }
 
+/* ── Media and recent cards ───────────────────────────── */
+
+.dhp-media {
+  spacing: 6px;
+  padding: 10px 8px 8px 8px;
+}
+
+.dhp-media-art {
+  border-radius: 8px;
+}
+
+.dhp-media-title {
+  font-weight: bold;
+  font-size: 10pt;
+}
+
+.dhp-media-artist {
+  font-size: 9pt;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dhp-media-controls {
+  spacing: 10px;
+  padding-top: 2px;
+}
+
+.dhp-media-button {
+  border-radius: 99px;
+  padding: 7px;
+  color: #f6f5f4;
+}
+
+.dhp-media-button:hover,
+.dhp-media-button:focus {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.dhp-media-button StIcon {
+  icon-size: 16px;
+}
+
+.dhp-media-play {
+  background-color: rgba(255, 255, 255, 0.14);
+  padding: 9px;
+}
+
+.dhp-recent {
+  spacing: 2px;
+}
+
+.dhp-recent-header {
+  font-size: 8.5pt;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 0 4px 4px 4px;
+}
+
+.dhp-recent-row {
+  border-radius: 8px;
+  padding: 5px 6px;
+}
+
+.dhp-recent-row:hover,
+.dhp-recent-row:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dhp-recent-box {
+  spacing: 8px;
+}
+
+.dhp-recent-name {
+  font-size: 9.5pt;
+  color: #f6f5f4;
+}
+
 /* ── Light theme ──────────────────────────────────────── */
 
 .dhp-popup.dhp-light {
@@ -110,4 +186,25 @@
 .dhp-light .dhp-close:hover {
   background-color: rgba(224, 27, 36, 0.9);
   color: #ffffff;
+}
+
+.dhp-light .dhp-media-artist,
+.dhp-light .dhp-recent-header {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.dhp-light .dhp-media-button,
+.dhp-light .dhp-recent-name {
+  color: #1e1e22;
+}
+
+.dhp-light .dhp-media-button:hover,
+.dhp-light .dhp-media-button:focus,
+.dhp-light .dhp-recent-row:hover,
+.dhp-light .dhp-recent-row:focus {
+  background-color: rgba(0, 0, 0, 0.07);
+}
+
+.dhp-light .dhp-media-play {
+  background-color: rgba(0, 0, 0, 0.08);
 }

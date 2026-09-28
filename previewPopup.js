@@ -3,6 +3,7 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
+import {MediaCard, RecentCard} from './contentCards.js';
 import {debug} from './util.js';
 import {WindowCard} from './windowCard.js';
 
@@ -13,6 +14,13 @@ const GAP_FROM_ICON = 8;
 const MIN_PREVIEW_WIDTH = 80;
 const CARD_CHROME = 24; // card padding + spacing around each thumbnail
 const SCREEN_FRACTION = 0.9; // how much of the screen edge the popup may use
+const EXTRA_CARD_WIDTH = 240 + 24; // media / recent card plus chrome
+
+/**
+ * @typedef {object} Extras
+ * @property {object|null} player   MPRIS player to show controls for
+ * @property {string[]} recents     recent file paths
+ */
 
 // The floating box of window cards shown next to a dock icon. It only knows
 // how to draw windows and where to sit; when to show or hide it is decided
@@ -58,7 +66,10 @@ export const PreviewPopup = GObject.registerClass({
         return this._icon;
     }
 
-    open(icon, app, windows) {
+    /**
+     * @param {Extras} [extras]  media controls and recent files
+     */
+    open(icon, app, windows, extras = {player: null, recents: []}) {
         const wasOpen = this.isOpen;
         this._syncBackground(); // picks up a light/dark switch since last time
         this._icon = icon;
@@ -68,7 +79,7 @@ export const PreviewPopup = GObject.registerClass({
             ? Clutter.Orientation.VERTICAL
             : Clutter.Orientation.HORIZONTAL;
 
-        this.setWindows(windows);
+        this.setWindows(windows, extras);
 
         this.remove_all_transitions();
         // Stay above the dock, which may have been re-added after us.
@@ -96,16 +107,23 @@ export const PreviewPopup = GObject.registerClass({
         });
     }
 
-    setWindows(windows) {
+    /**
+     * @param {Meta.Window[]} windows
+     * @param {Extras} [extras]
+     */
+    setWindows(windows, extras = this._extras ?? {player: null, recents: []}) {
+        this._extras = extras;
         this.destroy_all_children();
 
         const monitor = Main.layoutManager.findMonitorForActor(this._icon);
         const vertical = this.orientation === Clutter.Orientation.VERTICAL;
-        const available = (vertical ? monitor.height : monitor.width) * SCREEN_FRACTION;
+        const extraCards = (extras.player ? 1 : 0) + (extras.recents.length ? 1 : 0);
+        const available = (vertical ? monitor.height : monitor.width) * SCREEN_FRACTION -
+            extraCards * EXTRA_CARD_WIDTH;
         // Shrink previews when there are too many windows to fit in a row.
         const maxWidth = Math.max(MIN_PREVIEW_WIDTH, Math.min(
             this._settings.get_int('preview-size'),
-            available / windows.length - CARD_CHROME));
+            available / Math.max(1, windows.length) - CARD_CHROME));
 
         for (const win of windows) {
             const card = new WindowCard({
@@ -119,6 +137,11 @@ export const PreviewPopup = GObject.registerClass({
                 this.emit('card-hover-changed', card.hover ? win : null));
             this.add_child(card);
         }
+
+        if (extras.player)
+            this.add_child(new MediaCard(extras.player));
+        if (extras.recents.length)
+            this.add_child(new RecentCard(this._app, extras.recents, () => this.emit('window-activated')));
 
         this._reposition();
     }
