@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/icon.svg" alt="" width="128" height="128">
+
 # Dock Hover Preview
 
 **Live window previews for the GNOME dock.**
