@@ -1,5 +1,5 @@
-// Extra cards next to the window previews: media controls for an app that's
-// playing, and the files the app opened recently.
+// The media card next to the window previews: album art, title and
+// controls for an app that's playing music or video.
 
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
@@ -10,7 +10,6 @@ import St from 'gi://St';
 
 const ART_SIZE = 96;
 const CARD_WIDTH = 240;
-const FILE_ICON_SIZE = 20;
 
 // Album art, title, artist and ⏮ ⏯ ⏭, kept in sync with the player.
 export const MediaCard = GObject.registerClass(
@@ -59,47 +58,6 @@ class MediaCard extends St.BoxLayout {
         this._next.reactive = p.canGoNext;
         this._prev.opacity = p.canGoPrevious ? 255 : 100;
         this._next.opacity = p.canGoNext ? 255 : 100;
-    }
-});
-
-// "Recent" list: click a file to open it again in the same app.
-export const RecentCard = GObject.registerClass(
-class RecentCard extends St.BoxLayout {
-    _init(app, paths, onOpened) {
-        super._init({
-            style_class: 'dhp-card dhp-recent',
-            orientation: Clutter.Orientation.VERTICAL,
-            width: CARD_WIDTH,
-        });
-        this.add_child(new St.Label({text: 'Recent', style_class: 'dhp-recent-header'}));
-
-        for (const path of paths) {
-            const row = new St.Button({style_class: 'dhp-recent-row', can_focus: true, x_expand: true});
-            const box = new St.BoxLayout({style_class: 'dhp-recent-box', x_expand: true});
-            const [type] = Gio.content_type_guess(path, null);
-            const isFolder = GLib.file_test(path, GLib.FileTest.IS_DIR);
-            box.add_child(new St.Icon({
-                gicon: Gio.content_type_get_icon(isFolder ? 'inode/directory' : type),
-                icon_size: FILE_ICON_SIZE,
-            }));
-            const name = label('dhp-recent-name');
-            name.text = GLib.path_get_basename(path);
-            name.x_expand = true;
-            name.x_align = Clutter.ActorAlign.START;
-            name.y_align = Clutter.ActorAlign.CENTER;
-            box.add_child(name);
-            row.set_child(box);
-            row.connect('clicked', () => {
-                const file = Gio.File.new_for_path(path);
-                try {
-                    app.get_app_info().launch([file], global.create_app_launch_context(0, -1));
-                } catch {
-                    Gio.AppInfo.launch_default_for_uri(file.get_uri(), global.create_app_launch_context(0, -1));
-                }
-                onOpened();
-            });
-            this.add_child(row);
-        }
     }
 });
 

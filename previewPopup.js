@@ -3,7 +3,7 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {MediaCard, RecentCard} from './contentCards.js';
+import {MediaCard} from './contentCards.js';
 import {debug} from './util.js';
 import {WindowCard} from './windowCard.js';
 
@@ -14,12 +14,11 @@ const GAP_FROM_ICON = 8;
 const MIN_PREVIEW_WIDTH = 80;
 const CARD_CHROME = 24; // card padding + spacing around each thumbnail
 const SCREEN_FRACTION = 0.9; // how much of the screen edge the popup may use
-const EXTRA_CARD_WIDTH = 240 + 24; // media / recent card plus chrome
+const EXTRA_CARD_WIDTH = 240 + 24; // media card plus chrome
 
 /**
  * @typedef {object} Extras
  * @property {object|null} player   MPRIS player to show controls for
- * @property {string[]} recents     recent file paths
  */
 
 // The floating box of window cards shown next to a dock icon. It only knows
@@ -67,9 +66,9 @@ export const PreviewPopup = GObject.registerClass({
     }
 
     /**
-     * @param {Extras} [extras]  media controls and recent files
+     * @param {Extras} [extras]  media controls
      */
-    open(icon, app, windows, extras = {player: null, recents: []}) {
+    open(icon, app, windows, extras = {player: null}) {
         const wasOpen = this.isOpen;
         this._syncBackground(); // picks up a light/dark switch since last time
         this._icon = icon;
@@ -111,13 +110,13 @@ export const PreviewPopup = GObject.registerClass({
      * @param {Meta.Window[]} windows
      * @param {Extras} [extras]
      */
-    setWindows(windows, extras = this._extras ?? {player: null, recents: []}) {
+    setWindows(windows, extras = this._extras ?? {player: null}) {
         this._extras = extras;
         this.destroy_all_children();
 
         const monitor = Main.layoutManager.findMonitorForActor(this._icon);
         const vertical = this.orientation === Clutter.Orientation.VERTICAL;
-        const extraCards = (extras.player ? 1 : 0) + (extras.recents.length ? 1 : 0);
+        const extraCards = extras.player ? 1 : 0;
         const available = (vertical ? monitor.height : monitor.width) * SCREEN_FRACTION -
             extraCards * EXTRA_CARD_WIDTH;
         // Shrink previews when there are too many windows to fit in a row.
@@ -140,8 +139,6 @@ export const PreviewPopup = GObject.registerClass({
 
         if (extras.player)
             this.add_child(new MediaCard(extras.player));
-        if (extras.recents.length)
-            this.add_child(new RecentCard(this._app, extras.recents, () => this.emit('window-activated')));
 
         this._reposition();
     }

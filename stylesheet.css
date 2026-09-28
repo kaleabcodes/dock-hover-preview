@@ -73,7 +73,7 @@
   border-radius: 6px;
 }
 
-/* ── Media and recent cards ───────────────────────────── */
+/* ── Media card ───────────────────────────────────────── */
 
 .dhp-media {
   spacing: 6px;
@@ -119,36 +119,6 @@
   padding: 9px;
 }
 
-.dhp-recent {
-  spacing: 2px;
-}
-
-.dhp-recent-header {
-  font-size: 8.5pt;
-  font-weight: bold;
-  color: rgba(255, 255, 255, 0.55);
-  padding: 0 4px 4px 4px;
-}
-
-.dhp-recent-row {
-  border-radius: 8px;
-  padding: 5px 6px;
-}
-
-.dhp-recent-row:hover,
-.dhp-recent-row:focus {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.dhp-recent-box {
-  spacing: 8px;
-}
-
-.dhp-recent-name {
-  font-size: 9.5pt;
-  color: #f6f5f4;
-}
-
 /* ── Light theme ──────────────────────────────────────── */
 
 .dhp-popup.dhp-light {
@@ -188,20 +158,16 @@
   color: #ffffff;
 }
 
-.dhp-light .dhp-media-artist,
-.dhp-light .dhp-recent-header {
+.dhp-light .dhp-media-artist {
   color: rgba(0, 0, 0, 0.55);
 }
 
-.dhp-light .dhp-media-button,
-.dhp-light .dhp-recent-name {
+.dhp-light .dhp-media-button {
   color: #1e1e22;
 }
 
 .dhp-light .dhp-media-button:hover,
-.dhp-light .dhp-media-button:focus,
-.dhp-light .dhp-recent-row:hover,
-.dhp-light .dhp-recent-row:focus {
+.dhp-light .dhp-media-button:focus {
   background-color: rgba(0, 0, 0, 0.07);
 }
 

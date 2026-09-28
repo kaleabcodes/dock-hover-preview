@@ -25,7 +25,6 @@ or close them without leaving the dock.
   on any screen edge
 - **Media controls** — album art, title and ⏮ ⏯ ⏭ for apps playing music
   or video (Spotify, browsers, VLC…), even with no window open
-- **Recent files** — the files an app opened recently, one click to reopen
 - **Configurable** — delays, sizes, visible elements, opacity and animations
 
 ![Peeking at a window](screenshots/peek.png)
