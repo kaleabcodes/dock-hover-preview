@@ -8,23 +8,49 @@ import * as Dash from 'resource:///org/gnome/shell/ui/dash.js';
 import {debug} from './util.js';
 
 export class IconTracker {
-    constructor({onIconEnter, onIconLeave, onIconActivated}) {
+    constructor({onIconEnter, onIconLeave, onIconActivated, onIconFocus, onFocusElsewhere, onIconKeyPress}) {
         this._onIconEnter = onIconEnter;
         this._onIconLeave = onIconLeave;
         this._onIconActivated = onIconActivated;
+        this._onIconFocus = onIconFocus;
+        this._onFocusElsewhere = onFocusElsewhere;
+        this._onIconKeyPress = onIconKeyPress;
         this._currentIcon = null;
         this._iconSignals = [];
 
         // captured-event on the stage sees pointer motion over every shell
         // actor before anything can stop it, wherever the dock lives.
         this._stageEventId = global.stage.connect('captured-event', (_, event) => {
-            if (event.type() === Clutter.EventType.MOTION) {
+            const type = event.type();
+            if (type === Clutter.EventType.MOTION) {
                 const icon = findDockAppIcon(global.stage.get_event_actor(event));
                 if (icon)
                     this._setIcon(icon);
+            } else if (type === Clutter.EventType.KEY_PRESS) {
+                // Only keys on a focused dock icon, and only the ones the
+                // extension asks to keep (e.g. the arrow into the preview).
+                const icon = findDockAppIcon(global.stage.key_focus);
+                if (icon)
+                    return this._onIconKeyPress(icon, icon._delegate.app, event);
             }
-            return Clutter.EVENT_PROPAGATE; // never swallow events
+            return Clutter.EVENT_PROPAGATE;
         });
+
+        // Keyboard users reach dock icons with Ctrl+Alt+Tab and the arrow
+        // keys; a focused icon counts like a hovered one.
+        this._keyFocusId = global.stage.connect('notify::key-focus', () => {
+            const actor = global.stage.key_focus;
+            const icon = findDockAppIcon(actor);
+            if (icon)
+                this._onIconFocus(icon, icon._delegate.app);
+            else
+                this._onFocusElsewhere(actor);
+        });
+    }
+
+    // The dock icon under the pointer, if any.
+    get hoveredIcon() {
+        return this._currentIcon;
     }
 
     _setIcon(icon) {
@@ -69,6 +95,7 @@ export class IconTracker {
 
     destroy() {
         global.stage.disconnect(this._stageEventId);
+        global.stage.disconnect(this._keyFocusId);
         if (this._currentIcon)
             this._disconnectIcon();
         this._currentIcon = null;

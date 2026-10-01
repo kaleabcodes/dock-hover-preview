@@ -34,6 +34,8 @@ export default class DockHoverPreviewPreferences extends ExtensionPreferences {
         const windows = new Adw.PreferencesGroup({title: 'Windows'});
         windows.add(switchRow(settings, 'current-workspace-only', 'Current workspace only',
             'Otherwise windows on other workspaces are shown with their workspace number'));
+        windows.add(switchRow(settings, 'current-monitor-only', 'Current monitor only',
+            'Only show windows on the screen containing the hovered dock icon'));
         windows.add(switchRow(settings, 'click-focused-minimizes', 'Click focused window to minimize',
             'Clicking the preview of the window that already has focus minimizes it'));
         windows.add(switchRow(settings, 'middle-click-close', 'Middle-click to close',

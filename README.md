@@ -20,9 +20,15 @@ or close them without leaving the dock.
 ## Features
 
 - **Live thumbnails** of every window, updating in real time
+- **Scrollable previews** — readable thumbnails even with many windows; scroll
+  with the mouse wheel, touchpad or scrollbar
+- **Full window titles** — rest on a truncated title to read it in a tooltip
+- **Monitor filtering** — optionally show only windows on the hovered dock's screen
 - **Peek** — rest on a thumbnail to fade out other windows and see it in place
 - **Quick actions** — click to switch, click again to minimize, middle-click
   or × to close
+- **Keyboard navigation** — focus the dock with Ctrl+Alt+Tab, then use the
+  arrow keys to open and browse previews
 - **Works with any dock** — Dash to Dock, Ubuntu Dock or the built-in dash,
   on any screen edge
 - **Media controls** — album art, title and ⏮ ⏯ ⏭ for apps playing music
@@ -73,7 +79,21 @@ curl -fsSL https://raw.githubusercontent.com/kaleabcodes/dock-hover-preview/main
 | Click a preview | Switch to that window |
 | Click the focused window's preview | Minimize it |
 | Rest on a preview | Peek at the window in place |
+| Scroll over the previews | Browse windows that do not fit in the popup |
+| Rest on a truncated window title | Read the full title |
 | Middle-click a preview, or click × | Close the window |
+
+With the keyboard (dock icons focused with Ctrl+Alt+Tab, then **Dock** or **Dash**):
+
+| Key | Result |
+| --- | --- |
+| Arrows along the dock | Move between icons; a running app's previews open after the hover delay |
+| Arrow away from the dock (↑ for a bottom dock) | Move into the previews |
+| Arrows along the previews, Home, End | Move between previews |
+| Enter or Space | Switch to that window |
+| Delete | Close the window |
+| Tab | Move through the media buttons in a preview |
+| Arrow toward the dock, or Esc | Back to the dock icon; Esc there closes the previews |
 
 ## Configuration
 
@@ -91,6 +111,7 @@ gnome-extensions prefs dock-hover-preview@kaleabcodes.dev
 | Hover delay | 300 ms | Time on an icon before the preview opens |
 | Hide delay | 250 ms | Time the preview stays open after the pointer leaves |
 | Current workspace only | On | Hide windows on other workspaces |
+| Current monitor only | Off | Only show windows on the hovered dock's screen |
 | Click focused window to minimize | On | Clicking the active window's preview minimizes it |
 | Middle-click to close | On | Middle-clicking a preview closes the window |
 | Peek at window | On | Fade out other windows while resting on a preview |
@@ -103,6 +124,9 @@ gnome-extensions prefs dock-hover-preview@kaleabcodes.dev
 ![Settings window](screenshots/settings.png)
 
 </details>
+
+Moving between the dock icon and its popup has a brief grace period, so the
+preview stays open while crossing the gap, including diagonal movement.
 
 ## Troubleshooting
 

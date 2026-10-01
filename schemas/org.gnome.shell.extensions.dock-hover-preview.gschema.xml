@@ -23,6 +23,11 @@
       <summary>Current workspace only</summary>
       <description>Only preview windows on the active workspace.</description>
     </key>
+    <key name="current-monitor-only" type="b">
+      <default>false</default>
+      <summary>Current monitor only</summary>
+      <description>Only preview windows on the monitor containing the hovered dock icon.</description>
+    </key>
     <key name="click-focused-minimizes" type="b">
       <default>true</default>
       <summary>Clicking the focused window minimizes it</summary>

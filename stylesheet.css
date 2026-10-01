@@ -21,6 +21,24 @@
   transition-duration: 100ms;
 }
 
+.dhp-cards {
+  spacing: 8px;
+}
+
+.dhp-title-tooltip {
+  color: #f6f5f4;
+  background-color: #1c1c1e;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 9.5pt;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.dhp-title-tooltip.dhp-light {
+  color: #1e1e22;
+  background-color: #fafafb;
+}
+
 .dhp-card:hover,
 .dhp-card:focus {
   background-color: rgba(255, 255, 255, 0.1);

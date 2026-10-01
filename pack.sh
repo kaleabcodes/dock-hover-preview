@@ -14,7 +14,7 @@ OUT="$SRC/dist/$UUID.shell-extension.zip"
 BUILD=$(mktemp -d)
 trap 'rm -rf "$BUILD"' EXIT
 
-cp extension.js prefs.js iconTracker.js previewPopup.js windowCard.js contentCards.js contentSources.js mediaMatch.js \
+cp extension.js prefs.js iconTracker.js previewPopup.js previewGeometry.js windowCard.js contentCards.js contentSources.js mediaMatch.js \
    windowPeek.js util.js stylesheet.css LICENSE metadata.json "$BUILD/"
 mkdir "$BUILD/schemas"
 cp schemas/*.gschema.xml "$BUILD/schemas/"
