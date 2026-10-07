@@ -3,6 +3,7 @@
   "name": "Dock Hover Preview",
   "description": "Shows live window previews when hovering running apps in the dock. Works with the built-in dash, Ubuntu Dock and Dash to Dock.",
   "shell-version": [
+    "47",
     "48",
     "49",
     "50"

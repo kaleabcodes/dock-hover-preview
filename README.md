@@ -10,7 +10,7 @@ Hover a running app in the dock to see its open windows — then switch, peek
 or close them without leaving the dock.
 
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE)
-[![GNOME Shell 48–50](https://img.shields.io/badge/GNOME%20Shell-48%20%7C%2049%20%7C%2050-4a86cf.svg?logo=gnome&logoColor=white)](https://www.gnome.org)
+[![GNOME Shell 47–50](https://img.shields.io/badge/GNOME%20Shell-47%20%7C%2048%20%7C%2049%20%7C%2050-4a86cf.svg?logo=gnome&logoColor=white)](https://www.gnome.org)
 [![Release](https://github.com/kaleabcodes/dock-hover-preview/actions/workflows/release.yml/badge.svg)](https://github.com/kaleabcodes/dock-hover-preview/actions/workflows/release.yml)
 
 ![Window previews above the dock](screenshots/preview.png)
@@ -39,7 +39,9 @@ or close them without leaving the dock.
 
 ## Installation
 
-Requires **GNOME Shell 48, 49 or 50** (e.g. Ubuntu 25.04 or newer, Fedora 42 or newer).
+Requires **GNOME Shell 47, 48, 49 or 50** (e.g. Ubuntu 24.10 or newer, Fedora 41 or newer).
+Works with the built-in dash, Dash to Dock, Ubuntu Dock, and docks that build on
+GNOME Shell's dash items (such as Dash to Panel).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kaleabcodes/dock-hover-preview/main/install.sh | bash
@@ -82,6 +84,9 @@ curl -fsSL https://raw.githubusercontent.com/kaleabcodes/dock-hover-preview/main
 | Scroll over the previews | Browse windows that do not fit in the popup |
 | Rest on a truncated window title | Read the full title |
 | Middle-click a preview, or click × | Close the window |
+| Drag a preview | Drop the window on a workspace in the overview |
+| Scroll on the dock icon | Cycle through the app's windows (off by default) |
+| Long-press the dock icon (touch) | Open the previews; a second long-press opens the app menu |
 
 With the keyboard (dock icons focused with Ctrl+Alt+Tab, then **Dock** or **Dash**):
 
@@ -114,6 +119,8 @@ gnome-extensions prefs dock-hover-preview@kaleabcodes.dev
 | Current monitor only | Off | Only show windows on the hovered dock's screen |
 | Click focused window to minimize | On | Clicking the active window's preview minimizes it |
 | Middle-click to close | On | Middle-clicking a preview closes the window |
+| Drag previews to a workspace | On | Dragging a preview opens the overview to drop the window on a workspace |
+| Scroll on icon cycles windows | Off | Scrolling on a dock icon switches between the app's windows |
 | Peek at window | On | Fade out other windows while resting on a preview |
 | Peek delay | 700 ms | Time on a preview before peeking |
 | Preview width | 240 px | Maximum thumbnail width |

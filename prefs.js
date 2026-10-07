@@ -40,6 +40,10 @@ export default class DockHoverPreviewPreferences extends ExtensionPreferences {
             'Clicking the preview of the window that already has focus minimizes it'));
         windows.add(switchRow(settings, 'middle-click-close', 'Middle-click to close',
             'Middle-clicking a preview closes that window'));
+        windows.add(switchRow(settings, 'scroll-cycles-windows', 'Scroll over icon to switch windows',
+            'Scrolling the wheel over a running app\'s dock icon activates its next or previous window'));
+        windows.add(switchRow(settings, 'drag-to-workspace', 'Drag previews to move windows',
+            'Dragging a preview opens the overview, where it can be dropped on a workspace'));
         page.add(windows);
 
         const peek = new Adw.PreferencesGroup({

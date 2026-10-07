@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A GNOME Shell extension (GJS, ES modules, **GNOME Shell 48–50**, developed and tested on 50 / Wayland) that shows live window previews when hovering a running app's dock icon. UUID: `dock-hover-preview@kaleabcodes.dev`. Settings schema: `org.gnome.shell.extensions.dock-hover-preview`.
+A GNOME Shell extension (GJS, ES modules, **GNOME Shell 47–50**, developed and tested on 50 / Wayland) that shows live window previews when hovering a running app's dock icon. UUID: `dock-hover-preview@kaleabcodes.dev`. Settings schema: `org.gnome.shell.extensions.dock-hover-preview`.
 
 It must stay **independent of any dock extension**. It works with Dash to Dock, Ubuntu Dock and the built-in dash only through GNOME Shell's own classes. Don't import from or name-match Dash to Dock internals.
 
 ## Commands
 
-There is no test suite or linter. The checks (the same ones CI runs in `.github/workflows/release.yml`):
+There is no linter. Unit tests for the pure modules run with `npm test` (Node). CI (`.github/workflows/ci.yml`, and `release.yml` on tags) runs the tests plus these checks:
 
 ```bash
 glib-compile-schemas --strict --dry-run schemas/
@@ -49,7 +49,7 @@ The code is split so that each file owns one concern. `extension.js` is the only
 
 ### Version support
 
-`metadata.json` declares 48, 49 and 50; the APIs used were checked against the 48.0 and 49.0 sources. The floor is 48 because `St.BoxLayout`'s `orientation` property (used by `PreviewPopup` and `WindowCard`) doesn't exist in 47. Supporting 47 would need a fallback to the old `vertical` property. Only GNOME 50 is available locally for runtime testing.
+`metadata.json` declares 47–50; the APIs used were checked against the 47.0, 48.0 and 49.0 sources. GNOME 47 differences are isolated behind helpers: `util.js` has `orientationProps()`/`setOrientation()`/`isVertical()` because `St.BoxLayout.orientation` doesn't exist in 47 (only the legacy `vertical` property; detected once via `find_property`), and `contentSources.js` falls back to `Mpris.MediaSection` when `Mpris.MprisSource` is missing (47 has only the widget, whose `_players` map and player API are otherwise the same). `Clutter.LongPressGesture` (suppressed during touch long-press in `iconTracker.js`) only exists in newer shells and is guarded. Only GNOME 50 is available locally for runtime testing.
 
 ### Media card
 
@@ -60,6 +60,12 @@ Tests: `npm test` (Node; the pure modules). For media in a headless shell there'
 ### Theming (light and dark)
 
 A single `stylesheet.css` holds dark colors plus a `.dhp-light` override section. On every `open()`, `PreviewPopup._syncBackground()` checks `Main.getStyleVariant()` and toggles the `dhp-light` class together with the inline background (inline so `background-opacity` applies). **Don't rely on `stylesheet-light.css`**: GNOME didn't always reload extension stylesheets after a theme change (seen on Ubuntu with GNOME 50), which left dark text on the light background. To test light, use `--mode=ubuntu` with Ubuntu's Light appearance (`gtk-theme 'Yaru-purple'` and `color-scheme 'default'`), and save and restore both keys. The plain `user` mode never goes light, and Ubuntu mode rewrites `color-scheme` to match a `*-dark` gtk theme. Also check that the installed extension is a symlink to the repo (`./install.sh`): the curl installer leaves a copy, which silently runs old code.
+
+### Icon interactions (scroll, touch, drag)
+
+- **Scroll cycling** (`scroll-cycles-windows`, default off): `iconTracker.js` forwards SCROLL events on a dock icon to `extension._onIconScroll`, which cycles the app's windows with `Main.activateWindow`. Smooth (touchpad) deltas accumulate in `_scrollAccumulator` until ±1.
+- **Touch long-press**: `iconTracker.js` handles TOUCH_BEGIN/END/CANCEL with its own 425 ms `Timer` (shorter than the shell's ~500 ms default, so ours wins). On fire it disables the icon's `Clutter.LongPressGesture` actions for that touch (restored on touch end and in `destroy()`) and calls `extension._onIconLongPress`, which opens the preview and sets a `_touch` flag so the hover-leave that follows finger lift doesn't close it; a press outside closes it (`_onPress`). A second long-press while the preview is open returns `false` so the dock's own menu opens.
+- **Drag to workspace** (`drag-to-workspace`, default on): `windowCard.js` uses `DND.makeDraggable` and exposes the standard drop-source contract (`metaWindow`, `getDragActor`, `getDragActorSource`), so the overview's workspace/thumbnail `acceptDrop` handles the drop. On drag-begin the extension opens the overview and calls `popup.hideForDrag()` — the popup goes to opacity 0 and non-reactive but **stays mapped**, because unmapping the dragged card's parent kills the DND gesture. The real close and card teardown happen on drag-end (`_destroyCardsSoon`, BEFORE_REDRAW). Headless/virtual-pointer testing can't verify the drop: `dnd.js` rejects events whose sprite differs from the one captured at gesture start, which fails for virtual input devices (Clutter virtual devices and RemoteDesktop alike) — even dragging a plain dock icon stalls there. Verify drops on a real session.
 
 ### GNOME 50 pitfalls already hit (don't regress)
 

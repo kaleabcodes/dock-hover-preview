@@ -11,9 +11,19 @@ Gio._promisify(Gio.DBusConnection.prototype, 'call');
 
 export class MediaSource {
     constructor() {
-        this._source = new Mpris.MprisSource();
         this._pids = new Map(); // bus name -> pid, looked up once per player
-        this._source.connectObject('player-added', (_, player) => this._lookupPid(player), this);
+        if (Mpris.MprisSource) {
+            this._source = new Mpris.MprisSource();
+            this._source.connectObject('player-added', (_, player) => this._lookupPid(player), this);
+        } else {
+            // GNOME 47: the player list lives in the notification section
+            // widget, with no signal; PIDs are then looked up on first use.
+            this._source = new Mpris.MediaSection();
+        }
+    }
+
+    get _players() {
+        return this._source.players ?? [...this._source._players.values()];
     }
 
     /**
@@ -24,7 +34,7 @@ export class MediaSource {
      */
     playerFor(app) {
         const info = {desktopId: app.get_id(), pids: app.get_pids()};
-        for (const player of this._source.players) {
+        for (const player of this._players) {
             if (!this._pids.has(player._busName))
                 this._lookupPid(player);
             const desktopEntry = player.app?.get_id()?.replace(/\.desktop$/, '') ?? null;
@@ -51,6 +61,7 @@ export class MediaSource {
 
     destroy() {
         this._source.disconnectObject(this);
+        this._source.destroy?.(); // the 47 section is a widget
         this._source = null;
     }
 }

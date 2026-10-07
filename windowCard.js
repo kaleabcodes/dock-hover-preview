@@ -2,31 +2,39 @@ import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
+import * as DND from 'resource:///org/gnome/shell/ui/dnd.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {MediaControls} from './contentCards.js';
-import {Timer} from './util.js';
+import {Timer, orientationProps} from './util.js';
 
 const MIN_CARD_WIDTH = 140;
 const MIN_MEDIA_CARD_WIDTH = 230;
 const THUMBNAIL_ASPECT = 0.66; // max height relative to max width
 const APP_ICON_SIZE = 16;
 const MINIMIZED_OPACITY = 150;
+const DRAG_ACTOR_MAX_SIZE = 160;
 
 // One window in the popup: header (app icon, title, workspace badge, close
 // button) above a live thumbnail.
 //
 // Left click focuses the window (or minimizes it if it already has focus,
 // when enabled); middle click or Delete closes it (middle click only when
-// enabled). Enter and Space act like a left click.
-export const WindowCard = GObject.registerClass(
-class WindowCard extends St.Button {
+// enabled). Enter and Space act like a left click. Dragging the card moves
+// the window: the overview opens so it can be dropped on a workspace.
+export const WindowCard = GObject.registerClass({
+    Signals: {
+        'drag-begin': {},
+        'drag-end': {},
+    },
+}, class WindowCard extends St.Button {
     /**
      * @param {object} params
      * @param {object|null} [params.player]  media player shown in this card
      *     (the playing window of an app that's playing)
+     * @param {boolean} [params.draggable]  whether the card can be dragged
      */
-    _init({win, app, maxWidth, settings, onActivated, player = null}) {
+    _init({win, app, maxWidth, settings, onActivated, player = null, draggable = true}) {
         super._init({
             style_class: 'dhp-card',
             can_focus: true,
@@ -40,23 +48,26 @@ class WindowCard extends St.Button {
         this._titleTimer = new Timer();
         this._titleTooltip = null;
         this._title = null;
+        this._minimizedIcon = null;
         this.accessible_name = win.get_title() ?? '';
         this._connect(win, 'notify::title', () => {
             this.accessible_name = win.get_title() ?? '';
             this.hideTitleTooltip();
         });
 
-        const thumbnail = createThumbnail(win, maxWidth, maxWidth * THUMBNAIL_ASPECT);
+        const scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
+        this._thumbnail = createThumbnail(win, maxWidth, maxWidth * THUMBNAIL_ASPECT);
         // Room for the media row (art, title, three buttons) when it's shown.
-        const cardWidth = Math.max(thumbnail.width, player ? MIN_MEDIA_CARD_WIDTH : MIN_CARD_WIDTH);
+        const cardWidth = Math.max(this._thumbnail.width,
+            (player ? MIN_MEDIA_CARD_WIDTH : MIN_CARD_WIDTH) * scale);
 
-        const content = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL});
+        const content = new St.BoxLayout(orientationProps(Clutter.Orientation.VERTICAL));
         const header = this._createHeader(win, app, cardWidth);
         if (header)
             content.add_child(header);
         content.add_child(new St.Bin({
             style_class: 'dhp-thumbnail',
-            child: thumbnail,
+            child: this._thumbnail,
             width: cardWidth,
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
@@ -70,6 +81,11 @@ class WindowCard extends St.Button {
 
         this._connect(global.display, 'notify::focus-window', () => this._syncFocused());
         this._syncFocused();
+        this._connect(win, 'notify::minimized', () => this._syncMinimized());
+        this._syncMinimized();
+
+        if (draggable)
+            this._makeDraggable();
 
         this.connect('clicked', (_, button) => this._onClicked(button));
         this.connect('key-focus-in', () => this.syncTitleTooltip());
@@ -81,12 +97,47 @@ class WindowCard extends St.Button {
         });
     }
 
+    // The overview's workspaces accept drops whose source has `metaWindow`
+    // (same as its own window previews). The dragged actor is a fresh
+    // thumbnail, so the card stays in the popup until the drag is over.
+    _makeDraggable() {
+        this._delegate = this;
+        this._draggable = DND.makeDraggable(this, {dragActorOpacity: 200});
+        this._draggable.connect('drag-begin', () => {
+            this.fake_release();
+            this.hideTitleTooltip();
+            Main.overview.beginItemDrag(this);
+            this.emit('drag-begin');
+        });
+        this._draggable.connect('drag-cancelled', () => Main.overview.cancelledItemDrag(this));
+        this._draggable.connect('drag-end', () => {
+            Main.overview.endItemDrag(this);
+            this.emit('drag-end');
+        });
+    }
+
+    get metaWindow() {
+        return this.window;
+    }
+
+    getDragActor() {
+        const size = DRAG_ACTOR_MAX_SIZE * St.ThemeContext.get_for_stage(global.stage).scale_factor;
+        return createThumbnail(this.window, size, size);
+    }
+
+    getDragActorSource() {
+        return this._thumbnail;
+    }
+
     _createHeader(win, app, width) {
         const s = this._settings;
         const header = new St.BoxLayout({style_class: 'dhp-card-header', width});
+        let shown = 0;
 
-        if (s.get_boolean('show-app-icon'))
+        if (s.get_boolean('show-app-icon')) {
             header.add_child(app.create_icon_texture(APP_ICON_SIZE));
+            shown++;
+        }
 
         if (s.get_boolean('show-titles')) {
             const title = new St.Label({
@@ -102,9 +153,20 @@ class WindowCard extends St.Button {
             title.connect('notify::hover', () => this.syncTitleTooltip());
             this._title = title;
             header.add_child(title);
+            shown++;
         } else {
             header.add_child(new St.Widget({x_expand: true}));
         }
+
+        // Marks a minimized window; shown and hidden by _syncMinimized.
+        this._minimizedIcon = new St.Icon({
+            style_class: 'dhp-minimized-icon',
+            icon_name: 'window-minimize-symbolic',
+            icon_size: APP_ICON_SIZE,
+            y_align: Clutter.ActorAlign.CENTER,
+            visible: false,
+        });
+        header.add_child(this._minimizedIcon);
 
         // When windows from all workspaces are listed, mark the ones that
         // live elsewhere with their workspace number.
@@ -117,6 +179,7 @@ class WindowCard extends St.Button {
                 text: `${workspace.index() + 1}`,
                 y_align: Clutter.ActorAlign.CENTER,
             }));
+            shown++;
         }
 
         if (s.get_boolean('show-close-button')) {
@@ -127,10 +190,16 @@ class WindowCard extends St.Button {
             });
             close.connect('clicked', () => this.closeWindow());
             header.add_child(close);
+            shown++;
         }
 
-        // Nothing but the spacer: drop the header entirely.
-        return header.get_n_children() > 1 ? header : null;
+        // Nothing but the spacer and the minimized mark: drop the header.
+        if (shown === 0) {
+            header.destroy();
+            this._minimizedIcon = null;
+            return null;
+        }
+        return header;
     }
 
     // The full title of a truncated one, shortly after the pointer rests
@@ -213,6 +282,19 @@ class WindowCard extends St.Button {
             this.remove_style_pseudo_class('focused');
     }
 
+    // Minimized windows are dimmed and marked, and follow (un)minimizing
+    // while the popup is open.
+    _syncMinimized() {
+        const minimized = this.window.minimized;
+        this._thumbnail.opacity = minimized ? MINIMIZED_OPACITY : 255;
+        if (this._minimizedIcon)
+            this._minimizedIcon.visible = minimized;
+        if (minimized)
+            this.add_style_pseudo_class('minimized');
+        else
+            this.remove_style_pseudo_class('minimized');
+    }
+
     _connect(obj, signal, callback) {
         this._signals.push([obj, obj.connect(signal, callback)]);
     }
@@ -241,9 +323,6 @@ function createThumbnail(win, maxWidth, maxHeight) {
             height: Math.round(buffer.height * scale),
         }));
     }
-
-    if (win.minimized)
-        thumbnail.opacity = MINIMIZED_OPACITY;
 
     return thumbnail;
 }

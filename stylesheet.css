@@ -87,6 +87,18 @@
   icon-size: 12px;
 }
 
+/* A minimized window: dimmed thumbnail (set in windowCard.js), muted
+ * italic title and a small minimize mark. */
+.dhp-minimized-icon {
+  color: #aaaaaa;
+  icon-size: 12px;
+}
+
+.dhp-card:minimized .dhp-title {
+  color: #aaaaaa;
+  font-style: italic;
+}
+
 .dhp-thumbnail {
   border-radius: 6px;
 }
@@ -190,6 +202,11 @@
 
 .dhp-light .dhp-title {
   color: #1e1e22;
+}
+
+.dhp-light .dhp-minimized-icon,
+.dhp-light .dhp-card:minimized .dhp-title {
+  color: #6f6f78;
 }
 
 .dhp-light .dhp-badge {

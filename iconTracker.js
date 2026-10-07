@@ -5,33 +5,80 @@
 import Clutter from 'gi://Clutter';
 import * as Dash from 'resource:///org/gnome/shell/ui/dash.js';
 
-import {debug} from './util.js';
+import {Timer, debug} from './util.js';
+
+const LONG_PRESS_MS = 425; // under the dock menu's own long press (~500 ms)
 
 export class IconTracker {
-    constructor({onIconEnter, onIconLeave, onIconActivated, onIconFocus, onFocusElsewhere, onIconKeyPress}) {
+    constructor({
+        onIconEnter, onIconLeave, onIconActivated, onIconFocus, onFocusElsewhere, onIconKeyPress,
+        onIconScroll, onIconLongPress, onPress,
+    }) {
         this._onIconEnter = onIconEnter;
         this._onIconLeave = onIconLeave;
         this._onIconActivated = onIconActivated;
         this._onIconFocus = onIconFocus;
         this._onFocusElsewhere = onFocusElsewhere;
         this._onIconKeyPress = onIconKeyPress;
+        this._onIconScroll = onIconScroll;
+        this._onIconLongPress = onIconLongPress;
+        this._onPress = onPress;
         this._currentIcon = null;
         this._iconSignals = [];
+        this._longPress = new Timer();
+        this._longPressed = null; // the icon whose touch turned into a long press
 
         // captured-event on the stage sees pointer motion over every shell
         // actor before anything can stop it, wherever the dock lives.
         this._stageEventId = global.stage.connect('captured-event', (_, event) => {
-            const type = event.type();
-            if (type === Clutter.EventType.MOTION) {
+            switch (event.type()) {
+            case Clutter.EventType.MOTION: {
                 const icon = findDockAppIcon(global.stage.get_event_actor(event));
                 if (icon)
                     this._setIcon(icon);
-            } else if (type === Clutter.EventType.KEY_PRESS) {
+                break;
+            }
+            case Clutter.EventType.KEY_PRESS: {
                 // Only keys on a focused dock icon, and only the ones the
                 // extension asks to keep (e.g. the arrow into the preview).
                 const icon = findDockAppIcon(global.stage.key_focus);
                 if (icon)
                     return this._onIconKeyPress(icon, icon._delegate.app, event);
+                break;
+            }
+            case Clutter.EventType.SCROLL: {
+                const icon = findDockAppIcon(global.stage.get_event_actor(event));
+                if (icon)
+                    return this._onIconScroll(icon, icon._delegate.app, event);
+                break;
+            }
+            case Clutter.EventType.BUTTON_PRESS:
+                this._onPress(global.stage.get_event_actor(event));
+                break;
+            case Clutter.EventType.TOUCH_BEGIN: {
+                // Touch screens have no hover: holding a finger on an icon
+                // opens its preview instead.
+                const actor = global.stage.get_event_actor(event);
+                this._onPress(actor);
+                const icon = findDockAppIcon(actor);
+                this._longPress.stop();
+                if (icon)
+                    this._longPress.start(LONG_PRESS_MS, () => this._onLongPress(icon));
+                break;
+            }
+            case Clutter.EventType.TOUCH_END:
+            case Clutter.EventType.TOUCH_CANCEL:
+                this._longPress.stop();
+                this._restoreIconGestures();
+                if (this._longPressed) {
+                    // Lifting the finger must not count as a click, which
+                    // would launch the app and dismiss the preview.
+                    this._longPressed = null;
+                    return Clutter.EVENT_STOP;
+                }
+                break;
+            default:
+                break;
             }
             return Clutter.EVENT_PROPAGATE;
         });
@@ -51,6 +98,40 @@ export class IconTracker {
     // The dock icon under the pointer, if any.
     get hoveredIcon() {
         return this._currentIcon;
+    }
+
+    _onLongPress(icon) {
+        // Track the icon like a hovered one, so clicks, its menu opening
+        // and its destruction dismiss the preview.
+        this._setIcon(icon);
+        // Our long press fires just before the icon's own, which would
+        // open its context menu. If the preview has something to show,
+        // keep this touch for it (a second long press, with the preview
+        // already open, falls through to the dock's menu).
+        if (!this._onIconLongPress(icon, icon._delegate.app))
+            return;
+        this._longPressed = icon;
+        this._suppressIconGestures(icon);
+        // Release the dock button's press so it won't fire "clicked".
+        icon.fake_release?.();
+        debug(`long press on ${icon._delegate.app.get_id()}`);
+    }
+
+    // Disables the icon's own long-press gesture (the context menu on
+    // GNOME ≥ 49) and menu timeout (older shells) for the current touch.
+    _suppressIconGestures(icon) {
+        this._restoreIconGestures();
+        if (Clutter.LongPressGesture) {
+            this._disabledGestures = icon.get_actions()
+                .filter(a => a instanceof Clutter.LongPressGesture && a.enabled);
+            this._disabledGestures.forEach(a => (a.enabled = false));
+        }
+        icon._removeMenuTimeout?.();
+    }
+
+    _restoreIconGestures() {
+        this._disabledGestures?.forEach(a => (a.enabled = true));
+        this._disabledGestures = null;
     }
 
     _setIcon(icon) {
@@ -96,6 +177,8 @@ export class IconTracker {
     destroy() {
         global.stage.disconnect(this._stageEventId);
         global.stage.disconnect(this._keyFocusId);
+        this._longPress.stop();
+        this._restoreIconGestures();
         if (this._currentIcon)
             this._disconnectIcon();
         this._currentIcon = null;

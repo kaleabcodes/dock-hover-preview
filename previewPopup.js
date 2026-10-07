@@ -8,7 +8,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {MediaCard} from './contentCards.js';
 import {playingWindowIndex} from './mediaMatch.js';
 import {inTravelCorridor} from './previewGeometry.js';
-import {debug} from './util.js';
+import {debug, isVertical, setOrientation} from './util.js';
 import {WindowCard} from './windowCard.js';
 
 const SLIDE_DISTANCE = 8;
@@ -32,6 +32,10 @@ export const PreviewPopup = GObject.registerClass({
         'card-hover-changed': {param_types: [GObject.TYPE_OBJECT]},
         // A card was clicked and its window activated or minimized.
         'window-activated': {},
+        // A card is being dragged (to a workspace in the overview), and
+        // the drag is over. The cards stay alive while one is dragged.
+        'window-drag-begin': {},
+        'window-drag-end': {},
     },
 }, class PreviewPopup extends St.BoxLayout {
     _init(settings) {
@@ -72,11 +76,15 @@ export const PreviewPopup = GObject.registerClass({
         this._syncBackground();
         this._scrollLater = 0;
         this._repositionLater = 0;
+        this._destroyCardsLater = 0;
+        this._dragging = false;
+        this._hiddenForDrag = false;
         this._refocus = null; // {index, until} after closing a window with Delete
         this.connect('destroy', () => {
             settings.disconnect(settingsId);
             this._cancelScrollIntoView();
             this._cancelReposition();
+            this._cancelDestroyCards();
         });
     }
 
@@ -97,9 +105,9 @@ export const PreviewPopup = GObject.registerClass({
         this._icon = icon;
         this._app = app;
         this._side = getDockSide(icon);
-        this._cards.orientation = this._side === St.Side.LEFT || this._side === St.Side.RIGHT
+        setOrientation(this._cards, this._side === St.Side.LEFT || this._side === St.Side.RIGHT
             ? Clutter.Orientation.VERTICAL
-            : Clutter.Orientation.HORIZONTAL;
+            : Clutter.Orientation.HORIZONTAL);
 
         if (!wasOpen || this._lastIcon !== icon) {
             this._scroll.hadjustment.value = 0;
@@ -112,6 +120,7 @@ export const PreviewPopup = GObject.registerClass({
         this.remove_all_transitions();
         // Stay above the dock, which may have been re-added after us.
         this.get_parent()?.set_child_above_sibling(this, null);
+        this.reactive = true;
         this.show();
 
         const duration = this._settings.get_int('animation-duration');
@@ -148,10 +157,11 @@ export const PreviewPopup = GObject.registerClass({
         if (focusedIndex >= 0)
             this.grab_key_focus();
         this._cancelScrollIntoView();
+        this._cancelDestroyCards();
         this._cards.destroy_all_children();
 
         const monitor = Main.layoutManager.findMonitorForActor(this._icon);
-        const vertical = this._cards.orientation === Clutter.Orientation.VERTICAL;
+        const vertical = isVertical(this._cards);
         const scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
         // CSS lengths are logical pixels; monitor geometry is in stage pixels.
         // Bound both dimensions, including unusually tall media cards.
@@ -165,9 +175,11 @@ export const PreviewPopup = GObject.registerClass({
             ? playingWindowIndex(windows.map(w => w.get_title() ?? ''), extras.player.trackTitle,
                 windows.findIndex(w => w.has_focus()))
             : -1;
-        const previewWidth = Math.min(this._settings.get_int('preview-size'),
+        // The setting is in logical pixels; on X11 HiDPI the stage is scaled.
+        const previewWidth = Math.min(this._settings.get_int('preview-size') * scale,
             monitor.width * SCREEN_FRACTION - 40 * scale,
             (monitor.height * SCREEN_FRACTION - 140 * scale) / 0.66);
+        const draggable = this._settings.get_boolean('drag-to-workspace');
 
         windows.forEach((win, index) => {
             const card = new WindowCard({
@@ -177,9 +189,28 @@ export const PreviewPopup = GObject.registerClass({
                 settings: this._settings,
                 onActivated: () => this.emit('window-activated'),
                 player: index === playerWindow ? extras.player : null,
+                draggable,
             });
             card.connect('notify::hover', () =>
                 this.emit('card-hover-changed', card.hover ? win : null));
+            card.connect('drag-begin', () => {
+                this._dragging = true;
+                this.emit('window-drag-begin');
+            });
+            card.connect('drag-end', () => {
+                this._dragging = false;
+                this.emit('window-drag-end');
+                // The popup got out of the way for the drag (staying
+                // mapped: unmapping the dragged card breaks the drag).
+                // Now it can really close; the dragged card is destroyed
+                // a frame later, once the drag code is done with it.
+                if (this._hiddenForDrag) {
+                    this._hiddenForDrag = false;
+                    this.hide();
+                    this.reactive = true;
+                    this._destroyCardsSoon();
+                }
+            });
             // A card focused from the keyboard behaves like a hovered one.
             card.connect('key-focus-in', () => {
                 this._scrollIntoView(card);
@@ -240,7 +271,7 @@ export const PreviewPopup = GObject.registerClass({
     // Shows the scrollbar only when the cards don't fit: St's AUTOMATIC
     // policy showed one even when they fitted exactly (GNOME 50).
     _syncScrollbar() {
-        const vertical = this._cards.orientation === Clutter.Orientation.VERTICAL;
+        const vertical = isVertical(this._cards);
         const [, length] = vertical
             ? this._cards.get_preferred_height(-1)
             : this._cards.get_preferred_width(-1);
@@ -263,6 +294,24 @@ export const PreviewPopup = GObject.registerClass({
         }
     }
 
+    _destroyCardsSoon() {
+        if (this._destroyCardsLater)
+            return;
+        this._destroyCardsLater = global.compositor.get_laters().add(Meta.LaterType.BEFORE_REDRAW, () => {
+            this._destroyCardsLater = 0;
+            if (!this.visible && !this._dragging)
+                this._cards.destroy_all_children();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _cancelDestroyCards() {
+        if (this._destroyCardsLater) {
+            global.compositor.get_laters().remove(this._destroyCardsLater);
+            this._destroyCardsLater = 0;
+        }
+    }
+
     _focusedCardIndex() {
         const focus = global.stage.key_focus;
         return focus ? this._cards.get_children().findIndex(card => card.contains(focus)) : -1;
@@ -274,7 +323,7 @@ export const PreviewPopup = GObject.registerClass({
     _onKeyPress(event) {
         const key = event.get_key_symbol();
         const index = this._focusedCardIndex();
-        const vertical = this._cards.orientation === Clutter.Orientation.VERTICAL;
+        const vertical = isVertical(this._cards);
         const rtl = !vertical && this._cards.get_text_direction() === Clutter.TextDirection.RTL;
         const previous = vertical ? Clutter.KEY_Up : rtl ? Clutter.KEY_Right : Clutter.KEY_Left;
         const next = vertical ? Clutter.KEY_Down : rtl ? Clutter.KEY_Left : Clutter.KEY_Right;
@@ -333,7 +382,7 @@ export const PreviewPopup = GObject.registerClass({
             });
             return;
         }
-        const vertical = this._cards.orientation === Clutter.Orientation.VERTICAL;
+        const vertical = isVertical(this._cards);
         const adjustment = vertical ? this._scroll.vadjustment : this._scroll.hadjustment;
         const box = card.get_allocation_box();
         const [start, end] = vertical ? [box.y1, box.y2] : [box.x1, box.x2];
@@ -343,7 +392,21 @@ export const PreviewPopup = GObject.registerClass({
             adjustment.value = end - adjustment.page_size;
     }
 
+    // Gets out of the way of a card drag without unmapping it: hiding the
+    // popup mid-drag would break the drag's grab. drag-end really closes it.
+    hideForDrag() {
+        this._clearCardHover();
+        this._icon = null;
+        this._app = null;
+        this.remove_all_transitions();
+        this._hiddenForDrag = true;
+        this.reactive = false;
+        this.opacity = 0;
+    }
+
     close(animate = true) {
+        if (this._hiddenForDrag)
+            return;
         this._clearCardHover();
         if (!this.visible)
             return;
@@ -394,7 +457,7 @@ export const PreviewPopup = GObject.registerClass({
     _onScroll(event) {
         if (event.is_pointer_emulated())
             return Clutter.EVENT_STOP;
-        const vertical = this._cards.orientation === Clutter.Orientation.VERTICAL;
+        const vertical = isVertical(this._cards);
         const adjustment = vertical ? this._scroll.vadjustment : this._scroll.hadjustment;
         let delta;
         switch (event.get_scroll_direction()) {

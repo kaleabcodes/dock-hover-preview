@@ -38,6 +38,16 @@
       <summary>Middle-click closes window</summary>
       <description>Middle-clicking a preview closes that window.</description>
     </key>
+    <key name="scroll-cycles-windows" type="b">
+      <default>false</default>
+      <summary>Scrolling over an icon cycles windows</summary>
+      <description>Scrolling the wheel over a running app's dock icon activates its next or previous window.</description>
+    </key>
+    <key name="drag-to-workspace" type="b">
+      <default>true</default>
+      <summary>Drag previews to move windows</summary>
+      <description>Dragging a preview opens the overview, where it can be dropped on a workspace or monitor.</description>
+    </key>
 
     <!-- Behavior: peek -->
     <key name="peek-on-hover" type="b">

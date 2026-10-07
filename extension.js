@@ -35,6 +35,7 @@ export default class DockHoverPreviewExtension extends Extension {
         this._unpinDock = null;
         this._appSignal = null; // [app, id] while open
         this._keyboard = false; // key focus is on the icon or in the preview
+        this._touch = false; // the preview was opened with a long press
 
         this._popup = new PreviewPopup(this._settings);
         Main.layoutManager.addTopChrome(this._popup);
@@ -59,11 +60,28 @@ export default class DockHoverPreviewExtension extends Extension {
             onIconFocus: (icon, app) => this._onIconFocus(icon, app),
             onFocusElsewhere: actor => this._onFocusElsewhere(actor),
             onIconKeyPress: (icon, app, event) => this._onIconKeyPress(icon, app, event),
+            onIconScroll: (icon, app, event) => this._onIconScroll(icon, app, event),
+            onIconLongPress: (icon, app) => this._onIconLongPress(icon, app),
+            onPress: actor => this._onPress(actor),
         });
+        this._scrollAccumulator = 0;
+        this._dragging = false; // a card is being dragged to a workspace
 
-        Main.overview.connectObject('showing', () => this._close(false), this);
+        this._popup.connectObject(
+            'window-drag-begin', () => this._onWindowDragBegin(),
+            'window-drag-end', () => {
+                this._dragging = false;
+            }, this);
+
+        Main.overview.connectObject('showing', () => {
+            if (!this._dragging) // dragging a card opens the overview itself
+                this._close(false);
+        }, this);
         global.workspace_manager.connectObject('active-workspace-changed',
-            () => this._close(false), this);
+            () => {
+                if (!this._dragging)
+                    this._close(false);
+            }, this);
         Main.layoutManager.connectObject('monitors-changed', () => this._close(false), this);
         global.display.connectObject(
             'window-entered-monitor', (_, _monitor, win) => this._onWindowMonitorChanged(win),
@@ -99,6 +117,8 @@ export default class DockHoverPreviewExtension extends Extension {
     }
 
     _onIconEnter(icon, app) {
+        if (this._dragging)
+            return;
         this._showTimer.stop();
         this._hideTimer.stop();
 
@@ -116,7 +136,9 @@ export default class DockHoverPreviewExtension extends Extension {
     _onIconLeave() {
         if (!this._keyboard)
             this._showTimer.stop();
-        if (this._popup.isOpen)
+        // A preview opened by touch has no pointer to follow; it stays
+        // until a tap elsewhere, on a card, or on the icon dismisses it.
+        if (this._popup.isOpen && !this._touch)
             this._scheduleHide();
     }
 
@@ -172,6 +194,11 @@ export default class DockHoverPreviewExtension extends Extension {
     }
 
     _open(icon, app) {
+        if (this._dragging)
+            return;
+        // A pending hover open (e.g. started when a long press began to
+        // track the icon) must not re-open and reset the state below.
+        this._showTimer.stop();
         const windows = this._getWindows(app, icon);
         const extras = this._getExtras(app);
         debug(`open ${app.get_id()}: ${windows.length} window(s), media=${Boolean(extras.player)}`);
@@ -185,6 +212,7 @@ export default class DockHoverPreviewExtension extends Extension {
         this._watchApp(app, icon);
         this._pin(icon);
         hideIconLabel(icon);
+        this._touch = false; // a long press sets it back right after
         this._popup.open(icon, app, windows, extras);
     }
 
@@ -195,10 +223,95 @@ export default class DockHoverPreviewExtension extends Extension {
         };
     }
 
+    // A finger held on an icon opens the preview at once. It then stays
+    // until a tap somewhere else, on a card, or on the icon closes it.
+    // Returns whether the touch was taken; otherwise the dock's own long
+    // press (its context menu) goes ahead, including a second long press
+    // while the preview is already open.
+    _onIconLongPress(icon, app) {
+        if (this._popup.isOpen && this._popup.icon === icon)
+            return false;
+        this._open(icon, app);
+        this._touch = this._popup.isOpen;
+        return this._touch;
+    }
+
+    // A press outside the preview and its icon dismisses it (clicks on the
+    // icon itself are handled by its "clicked" signal).
+    _onPress(actor) {
+        if (!this._popup.isOpen || this._dragging)
+            return;
+        if (actor && (this._popup.contains(actor) || this._popup.icon.contains(actor)))
+            return;
+        this._close(true);
+    }
+
+    // Scrolling over an icon activates the app's next or previous window
+    // (in the same order as the cards), when enabled.
+    _onIconScroll(icon, app, event) {
+        if (!this._settings.get_boolean('scroll-cycles-windows'))
+            return Clutter.EVENT_PROPAGATE;
+        if (event.is_pointer_emulated())
+            return Clutter.EVENT_STOP;
+
+        let step;
+        switch (event.get_scroll_direction()) {
+        case Clutter.ScrollDirection.UP:
+        case Clutter.ScrollDirection.LEFT:
+            step = -1;
+            break;
+        case Clutter.ScrollDirection.DOWN:
+        case Clutter.ScrollDirection.RIGHT:
+            step = 1;
+            break;
+        case Clutter.ScrollDirection.SMOOTH: {
+            // Touchpads send many small deltas; act once per whole step.
+            const [dx, dy] = event.get_scroll_delta();
+            this._scrollAccumulator += Math.abs(dx) > Math.abs(dy) ? dx : dy;
+            if (Math.abs(this._scrollAccumulator) < 1)
+                return Clutter.EVENT_STOP;
+            step = Math.sign(this._scrollAccumulator);
+            this._scrollAccumulator = 0;
+            break;
+        }
+        default:
+            return Clutter.EVENT_PROPAGATE;
+        }
+
+        const windows = this._getWindows(app, icon);
+        if (windows.length === 0)
+            return Clutter.EVENT_PROPAGATE;
+        const focused = windows.findIndex(win => win.has_focus());
+        const next = focused < 0
+            ? (step > 0 ? 0 : windows.length - 1)
+            : (focused + step + windows.length) % windows.length;
+        debug(`scroll ${step > 0 ? 'next' : 'previous'} window of ${app.get_id()}`);
+        Main.activateWindow(windows[next]);
+        return Clutter.EVENT_STOP;
+    }
+
+    // Dragging a card: the preview gets out of the way (but stays mapped,
+    // or the drag would break) and the overview opens so the window can be
+    // dropped on a workspace.
+    _onWindowDragBegin() {
+        this._dragging = true;
+        this._keyboard = false;
+        this._touch = false;
+        this._showTimer.stop();
+        this._hideTimer.stop();
+        this._endPeek();
+        this._unwatchApp();
+        this._pin(null);
+        this._popup.hideForDrag();
+        if (!Main.overview.visible)
+            Main.overview.show();
+    }
+
     _close(animate) {
         // Cleared first: closing drops key focus from the popup, which
         // must not re-enter here through _onFocusElsewhere.
         this._keyboard = false;
+        this._touch = false;
         this._showTimer.stop();
         this._hideTimer.stop();
         this._endPeek();
@@ -264,7 +377,7 @@ export default class DockHoverPreviewExtension extends Extension {
     }
 
     _refreshApp() {
-        if (!this._appSignal || !this._popup.isOpen)
+        if (!this._appSignal || !this._popup.isOpen || this._dragging)
             return;
         const [app] = this._appSignal;
         const windows = this._getWindows(app, this._appIcon);

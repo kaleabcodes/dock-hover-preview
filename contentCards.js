@@ -11,6 +11,8 @@ import GObject from 'gi://GObject';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
+import {orientationProps} from './util.js';
+
 const CARD_WIDTH = 240;
 const CARD_ART_SIZE = 96;
 const ROW_ART_SIZE = 32;
@@ -23,7 +25,7 @@ class MediaControls extends St.BoxLayout {
     _init(player, {compact}) {
         super._init({
             style_class: compact ? 'dhp-media-row' : 'dhp-media-column',
-            orientation: compact ? Clutter.Orientation.HORIZONTAL : Clutter.Orientation.VERTICAL,
+            ...orientationProps(compact ? Clutter.Orientation.HORIZONTAL : Clutter.Orientation.VERTICAL),
             x_expand: true,
         });
         this._player = player;
@@ -39,7 +41,7 @@ class MediaControls extends St.BoxLayout {
         this._artist = label('dhp-media-artist', align);
 
         const text = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...orientationProps(Clutter.Orientation.VERTICAL),
             x_expand: compact,
             y_align: Clutter.ActorAlign.CENTER,
         });
