@@ -12,9 +12,10 @@ export default class DockHoverPreviewPreferences extends ExtensionPreferences {
         const settings = this.getSettings();
         // Keep the settings object alive as long as the window.
         window._settings = settings;
+        window.search_enabled = true;
 
         window.add(this._behaviorPage(settings));
-        window.add(this._appearancePage(settings));
+        window.add(this._appearancePage(settings, window));
         window.add(this._aboutPage(window));
     }
 
@@ -65,7 +66,7 @@ export default class DockHoverPreviewPreferences extends ExtensionPreferences {
         return page;
     }
 
-    _appearancePage(settings) {
+    _appearancePage(settings, window) {
         const page = new Adw.PreferencesPage({
             title: 'Appearance',
             icon_name: 'applications-graphics-symbolic',
@@ -90,8 +91,22 @@ export default class DockHoverPreviewPreferences extends ExtensionPreferences {
         const resetRow = new Adw.ButtonRow({title: 'Reset All Settings'});
         resetRow.add_css_class('destructive-action');
         resetRow.connect('activated', () => {
-            for (const key of settings.settings_schema.list_keys())
-                settings.reset(key);
+            const dialog = new Adw.AlertDialog({
+                heading: 'Reset all settings?',
+                body: 'Your preview appearance and behavior will return to their defaults.',
+                close_response: 'cancel',
+                default_response: 'cancel',
+            });
+            dialog.add_response('cancel', 'Cancel');
+            dialog.add_response('reset', 'Reset All Settings');
+            dialog.set_response_appearance('reset', Adw.ResponseAppearance.DESTRUCTIVE);
+            dialog.connect('response', (_, response) => {
+                if (response === 'reset') {
+                    for (const key of settings.settings_schema.list_keys())
+                        settings.reset(key);
+                }
+            });
+            dialog.present(window);
         });
         reset.add(resetRow);
         page.add(reset);

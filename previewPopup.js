@@ -65,8 +65,9 @@ export const PreviewPopup = GObject.registerClass({
         this.connect('key-press-event', (_, event) => this._onKeyPress(event));
 
         // The real size is only known after layout (styles, fonts), so
-        // re-place the popup whenever its size changes.
-        this.connect('notify::size', () => {
+        // Allocation also covers the first layout: size notifications can
+        // arrive before preferred sizes and transforms are valid.
+        this.connect('notify::allocation', () => {
             if (this._icon)
                 this._reposition();
         });
@@ -231,6 +232,10 @@ export const PreviewPopup = GObject.registerClass({
         // notify::size wouldn't re-place it. Check both before drawing.
         if (!this._repositionLater) {
             this._repositionLater = global.compositor.get_laters().add(Meta.LaterType.BEFORE_REDRAW, () => {
+                // The dock icon can still be awaiting its first allocation,
+                // even when the popup itself has already been laid out.
+                if (this._icon && (!this.has_allocation() || !this._icon.has_allocation()))
+                    return GLib.SOURCE_CONTINUE;
                 this._repositionLater = 0;
                 if (this._icon) {
                     this._syncScrollbar();

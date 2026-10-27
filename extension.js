@@ -87,7 +87,9 @@ export default class DockHoverPreviewExtension extends Extension {
             'window-entered-monitor', (_, _monitor, win) => this._onWindowMonitorChanged(win),
             'window-left-monitor', (_, _monitor, win) => this._onWindowMonitorChanged(win), this);
         this._settings.connectObject('changed::current-monitor-only', () => this._refreshApp(),
-            'changed::current-workspace-only', () => this._refreshApp(), this);
+            'changed::current-workspace-only', () => this._refreshApp(),
+            'changed::show-media-controls', () => this._refreshApp(),
+            'changed::peek-on-hover', () => this._endPeek(), this);
     }
 
     disable() {
@@ -337,8 +339,10 @@ export default class DockHoverPreviewExtension extends Extension {
     }
 
     _onCardHover(win) {
-        if (!this._settings.get_boolean('peek-on-hover'))
+        if (!this._settings.get_boolean('peek-on-hover')) {
+            this._endPeek();
             return;
+        }
 
         if (win) {
             this._peekEndTimer.stop();
@@ -421,7 +425,7 @@ export default class DockHoverPreviewExtension extends Extension {
         return app.get_windows()
             .filter(win => !win.skip_taskbar &&
                 (!currentOnly || win.located_on_workspace(workspace)) &&
-                (!monitorOnly || win.get_monitor() === monitor.index))
+                (!monitorOnly || !monitor || win.get_monitor() === monitor.index))
             .sort((a, b) => a.get_stable_sequence() - b.get_stable_sequence());
     }
 }

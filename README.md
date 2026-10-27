@@ -97,7 +97,7 @@ With the keyboard (dock icons focused with Ctrl+Alt+Tab, then **Dock** or **Dash
 | Arrows along the previews, Home, End | Move between previews |
 | Enter or Space | Switch to that window |
 | Delete | Close the window |
-| Tab | Move through the media buttons in a preview |
+| Tab / Shift+Tab | Move through previews, close buttons and media controls |
 | Arrow toward the dock, or Esc | Back to the dock icon; Esc there closes the previews |
 
 ## Configuration
@@ -107,6 +107,9 @@ Open **Extensions → Dock Hover Preview → Settings**, or run:
 ```bash
 gnome-extensions prefs dock-hover-preview@kaleabcodes.dev
 ```
+
+Use the search button to find a setting. **Reset All Settings** asks for
+confirmation before restoring the defaults.
 
 <details>
 <summary>All settings</summary>

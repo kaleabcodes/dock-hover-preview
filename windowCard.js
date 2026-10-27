@@ -58,7 +58,7 @@ export const WindowCard = GObject.registerClass({
         const scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
         this._thumbnail = createThumbnail(win, maxWidth, maxWidth * THUMBNAIL_ASPECT);
         // Room for the media row (art, title, three buttons) when it's shown.
-        const cardWidth = Math.max(this._thumbnail.width,
+        const cardWidth = Math.max(maxWidth,
             (player ? MIN_MEDIA_CARD_WIDTH : MIN_CARD_WIDTH) * scale);
 
         const content = new St.BoxLayout(orientationProps(Clutter.Orientation.VERTICAL));
@@ -69,6 +69,7 @@ export const WindowCard = GObject.registerClass({
             style_class: 'dhp-thumbnail',
             child: this._thumbnail,
             width: cardWidth,
+            height: maxWidth * THUMBNAIL_ASPECT,
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
         }));
@@ -185,6 +186,8 @@ export const WindowCard = GObject.registerClass({
         if (s.get_boolean('show-close-button')) {
             const close = new St.Button({
                 style_class: 'dhp-close',
+                can_focus: true,
+                accessible_name: 'Close window',
                 child: new St.Icon({icon_name: 'window-close-symbolic'}),
                 y_align: Clutter.ActorAlign.CENTER,
             });

@@ -77,8 +77,11 @@ class MediaControls extends St.BoxLayout {
         this._artist.visible = this._artist.text.length > 0;
         this._playPause.child.icon_name = p.status === 'Playing'
             ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
+        this._playPause.accessible_name = p.status === 'Playing' ? 'Pause' : 'Play';
         this._prev.reactive = p.canGoPrevious;
         this._next.reactive = p.canGoNext;
+        this._prev.can_focus = p.canGoPrevious;
+        this._next.can_focus = p.canGoNext;
         this._prev.opacity = p.canGoPrevious ? 255 : 100;
         this._next.opacity = p.canGoNext ? 255 : 100;
     }

@@ -15,7 +15,7 @@ const FADED_TYPES = new Set([
 // be seen in place, then restores them.
 export class WindowPeek {
     constructor() {
-        this._faded = new Map(); // window actor -> destroy signal id
+        this._faded = new Map(); // window actor -> {id, opacity}
         this._target = null;
     }
 
@@ -26,15 +26,15 @@ export class WindowPeek {
     peek(win) {
         if (win === this._target)
             return;
-        // A minimized window has nothing on screen to reveal.
-        if (win.minimized) {
+        const workspace = global.workspace_manager.get_active_workspace();
+        // Only fade the desktop when the target can actually be seen here.
+        if (win.minimized || !win.located_on_workspace(workspace) ||
+            !win.get_compositor_private()) {
             this.end();
             return;
         }
 
         this._target = win;
-        const workspace = global.workspace_manager.get_active_workspace();
-
         for (const actor of global.get_window_actors()) {
             const other = actor.meta_window;
             const fade = other !== win && !other.minimized &&
@@ -56,7 +56,10 @@ export class WindowPeek {
 
     _fade(actor) {
         if (!this._faded.has(actor)) {
-            this._faded.set(actor, actor.connect('destroy', () => this._faded.delete(actor)));
+            this._faded.set(actor, {
+                id: actor.connect('destroy', () => this._faded.delete(actor)),
+                opacity: actor.opacity,
+            });
         }
         actor.ease({
             opacity: 0,
@@ -66,21 +69,28 @@ export class WindowPeek {
     }
 
     _restore(actor, animate = true) {
-        const id = this._faded.get(actor);
-        if (id === undefined)
+        const saved = this._faded.get(actor);
+        if (!saved)
             return;
-        actor.disconnect(id);
-        this._faded.delete(actor);
-
         actor.remove_transition('opacity');
+        const finish = () => {
+            actor.disconnect(saved.id);
+            this._faded.delete(actor);
+        };
         if (animate) {
             actor.ease({
-                opacity: 255,
+                opacity: saved.opacity,
                 duration: FADE_TIME_MS,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+                // Keep the saved opacity if another peek interrupts restoration.
+                onStopped: finished => {
+                    if (finished)
+                        finish();
+                },
             });
         } else {
-            actor.opacity = 255;
+            actor.opacity = saved.opacity;
+            finish();
         }
     }
 }
