@@ -34,8 +34,12 @@ export default class DockHoverPreviewExtension extends Extension {
         this._pinnedIcon = null;
         this._unpinDock = null;
         this._appSignal = null; // [app, id] while open
+        this._appIcon = null;
+        this._iconDestroyId = 0;
         this._keyboard = false; // key focus is on the icon or in the preview
         this._touch = false; // the preview was opened with a long press
+        this._dragging = false; // a card is being dragged to a workspace
+        this._scrollAccumulator = 0;
 
         this._popup = new PreviewPopup(this._settings);
         Main.layoutManager.addTopChrome(this._popup);
@@ -51,6 +55,10 @@ export default class DockHoverPreviewExtension extends Extension {
             },
             'card-hover-changed', (_, win) => this._onCardHover(win),
             'window-activated', () => this._close(false),
+            'window-drag-begin', () => this._onWindowDragBegin(),
+            'window-drag-end', () => {
+                this._dragging = false;
+            },
             this);
 
         this._tracker = new IconTracker({
@@ -64,14 +72,6 @@ export default class DockHoverPreviewExtension extends Extension {
             onIconLongPress: (icon, app) => this._onIconLongPress(icon, app),
             onPress: actor => this._onPress(actor),
         });
-        this._scrollAccumulator = 0;
-        this._dragging = false; // a card is being dragged to a workspace
-
-        this._popup.connectObject(
-            'window-drag-begin', () => this._onWindowDragBegin(),
-            'window-drag-end', () => {
-                this._dragging = false;
-            }, this);
 
         Main.overview.connectObject('showing', () => {
             if (!this._dragging) // dragging a card opens the overview itself
@@ -319,7 +319,7 @@ export default class DockHoverPreviewExtension extends Extension {
         this._endPeek();
         this._unwatchApp();
         this._pin(null);
-        this._popup?.close(animate);
+        this._popup.close(animate);
     }
 
     _scheduleHide() {
@@ -360,7 +360,7 @@ export default class DockHoverPreviewExtension extends Extension {
     _endPeek() {
         this._peekTimer.stop();
         this._peekEndTimer.stop();
-        this._peek?.end();
+        this._peek.end();
     }
 
     // Keeps the cards in sync when the app opens or closes windows while

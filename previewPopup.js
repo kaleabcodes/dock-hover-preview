@@ -38,8 +38,8 @@ export const PreviewPopup = GObject.registerClass({
         'window-drag-end': {},
     },
 }, class PreviewPopup extends St.BoxLayout {
-    _init(settings) {
-        super._init({
+    constructor(settings) {
+        super({
             style_class: 'dhp-popup',
             reactive: true,
             track_hover: true,
@@ -48,6 +48,9 @@ export const PreviewPopup = GObject.registerClass({
         this._settings = settings;
         this._icon = null;
         this._app = null;
+        this._lastIcon = null;
+        this._extras = {player: null};
+        this._maxCardsLength = 0;
         this._side = St.Side.BOTTOM;
         this._cards = new St.BoxLayout({style_class: 'dhp-cards'});
         this._scroll = new St.ScrollView({
@@ -64,9 +67,8 @@ export const PreviewPopup = GObject.registerClass({
         // Key presses bubble up here from the focused card.
         this.connect('key-press-event', (_, event) => this._onKeyPress(event));
 
-        // The real size is only known after layout (styles, fonts), so
-        // Allocation also covers the first layout: size notifications can
-        // arrive before preferred sizes and transforms are valid.
+        // The real size is only known after the first layout (styles,
+        // fonts), so re-place the popup whenever its allocation changes.
         this.connect('notify::allocation', () => {
             if (this._icon)
                 this._reposition();
@@ -120,7 +122,7 @@ export const PreviewPopup = GObject.registerClass({
 
         this.remove_all_transitions();
         // Stay above the dock, which may have been re-added after us.
-        this.get_parent()?.set_child_above_sibling(this, null);
+        this.get_parent().set_child_above_sibling(this, null);
         this.reactive = true;
         this.show();
 
@@ -149,7 +151,7 @@ export const PreviewPopup = GObject.registerClass({
      * @param {Meta.Window[]} windows
      * @param {Extras} [extras]
      */
-    setWindows(windows, extras = this._extras ?? {player: null}) {
+    setWindows(windows, extras = this._extras) {
         this._extras = extras;
         this._clearCardHover();
         // Keep keyboard focus in the popup while its cards are replaced,
@@ -362,7 +364,7 @@ export const PreviewPopup = GObject.registerClass({
         case Clutter.KEY_Delete:
         case Clutter.KEY_KP_Delete: {
             const card = this._cards.get_child_at_index(index);
-            if (card?.closeWindow) {
+            if (card instanceof WindowCard) {
                 this._refocus = {index, until: GLib.get_monotonic_time() + REFOCUS_TIMEOUT_US};
                 card.closeWindow();
             }
@@ -454,8 +456,10 @@ export const PreviewPopup = GObject.registerClass({
     }
 
     _clearCardHover() {
-        for (const card of this._cards.get_children())
-            card.hideTitleTooltip?.();
+        for (const card of this._cards.get_children()) {
+            if (card instanceof WindowCard)
+                card.hideTitleTooltip();
+        }
         this.emit('card-hover-changed', null);
     }
 
@@ -503,14 +507,10 @@ export const PreviewPopup = GObject.registerClass({
             12 * St.ThemeContext.get_for_stage(global.stage).scale_factor);
     }
 
-    // The background is set here, not in the stylesheet, so the
-    // "background-opacity" setting can apply. Its base color follows the
-    // shell's light/dark style (the stylesheets handle everything else).
-    // Colors follow the shell's light/dark style, checked on every open.
-    // The "dhp-light" class switches the stylesheet colors and the base of
-    // the inline background (inline so "background-opacity" can apply)
-    // together, so they can never disagree. Relying on GNOME swapping
-    // extension stylesheets didn't work: it doesn't always reload them.
+    // The background is inline so "background-opacity" can apply. The
+    // "dhp-light" class and the background color are switched together on
+    // every open; GNOME doesn't always reload extension stylesheets after a
+    // theme change, so stylesheet-light.css can't be relied on.
     _syncBackground() {
         const light = Main.getStyleVariant() === 'light';
         if (light)

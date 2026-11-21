@@ -22,8 +22,8 @@ const ROW_ART_SIZE = 32;
 // otherwise a column for the standalone card.
 export const MediaControls = GObject.registerClass(
 class MediaControls extends St.BoxLayout {
-    _init(player, {compact}) {
-        super._init({
+    constructor(player, {compact}) {
+        super({
             style_class: compact ? 'dhp-media-row' : 'dhp-media-column',
             ...orientationProps(compact ? Clutter.Orientation.HORIZONTAL : Clutter.Orientation.VERTICAL),
             x_expand: true,
@@ -90,8 +90,8 @@ class MediaControls extends St.BoxLayout {
 // The standalone card, for a player whose app has no windows.
 export const MediaCard = GObject.registerClass(
 class MediaCard extends St.Bin {
-    _init(player) {
-        super._init({
+    constructor(player) {
+        super({
             style_class: 'dhp-card dhp-media',
             width: CARD_WIDTH,
             reactive: true,

@@ -14,6 +14,8 @@ const THUMBNAIL_ASPECT = 0.66; // max height relative to max width
 const APP_ICON_SIZE = 16;
 const MINIMIZED_OPACITY = 150;
 const DRAG_ACTOR_MAX_SIZE = 160;
+const TITLE_TOOLTIP_DELAY_MS = 500;
+const TITLE_TOOLTIP_MAX_WIDTH = 480;
 
 // One window in the popup: header (app icon, title, workspace badge, close
 // button) above a live thumbnail.
@@ -34,8 +36,8 @@ export const WindowCard = GObject.registerClass({
      *     (the playing window of an app that's playing)
      * @param {boolean} [params.draggable]  whether the card can be dragged
      */
-    _init({win, app, maxWidth, settings, onActivated, player = null, draggable = true}) {
-        super._init({
+    constructor({win, app, maxWidth, settings, onActivated, player = null, draggable = true}) {
+        super({
             style_class: 'dhp-card',
             can_focus: true,
             track_hover: true,
@@ -212,7 +214,7 @@ export const WindowCard = GObject.registerClass({
         this.hideTitleTooltip();
         if (!wanted())
             return;
-        this._titleTimer.start(500, () => {
+        this._titleTimer.start(TITLE_TOOLTIP_DELAY_MS, () => {
             if (wanted() && this._title.clutter_text.get_layout().is_ellipsized())
                 this._showTitleTooltip(this._title);
         });
@@ -235,7 +237,7 @@ export const WindowCard = GObject.registerClass({
         this._titleTooltip = tooltip;
         Main.layoutManager.addTopChrome(tooltip);
         const [, naturalWidth] = tooltip.get_preferred_width(-1);
-        tooltip.width = Math.min(naturalWidth, 480 * scale, monitor.width - 2 * margin);
+        tooltip.width = Math.min(naturalWidth, TITLE_TOOLTIP_MAX_WIDTH * scale, monitor.width - 2 * margin);
         const [, height] = tooltip.get_preferred_height(tooltip.width);
         const [tx, ty] = title.get_transformed_position();
         const [tw, th] = title.get_transformed_size();

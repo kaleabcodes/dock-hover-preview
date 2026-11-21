@@ -27,6 +27,7 @@ export class IconTracker {
         this._iconSignals = [];
         this._longPress = new Timer();
         this._longPressed = null; // the icon whose touch turned into a long press
+        this._disabledGestures = [];
 
         // captured-event on the stage sees pointer motion over every shell
         // actor before anything can stop it, wherever the dock lives.
@@ -113,7 +114,7 @@ export class IconTracker {
         this._longPressed = icon;
         this._suppressIconGestures(icon);
         // Release the dock button's press so it won't fire "clicked".
-        icon.fake_release?.();
+        icon.fake_release();
         debug(`long press on ${icon._delegate.app.get_id()}`);
     }
 
@@ -126,12 +127,13 @@ export class IconTracker {
                 .filter(a => a instanceof Clutter.LongPressGesture && a.enabled);
             this._disabledGestures.forEach(a => (a.enabled = false));
         }
+        // Only exists before GNOME 49, which replaced it with the gesture.
         icon._removeMenuTimeout?.();
     }
 
     _restoreIconGestures() {
-        this._disabledGestures?.forEach(a => (a.enabled = true));
-        this._disabledGestures = null;
+        this._disabledGestures.forEach(a => (a.enabled = true));
+        this._disabledGestures = [];
     }
 
     _setIcon(icon) {
@@ -186,9 +188,12 @@ export class IconTracker {
 }
 
 // Hides the dock's app-name tooltip, which would otherwise overlap the
-// preview. The tooltip belongs to the icon's dash item container.
+// preview. The tooltip belongs to the icon's dash item container (the icon
+// may already have been removed from it).
 export function hideIconLabel(icon) {
-    icon.get_parent()?.hideLabel?.();
+    const container = icon.get_parent();
+    if (container instanceof Dash.DashItemContainer)
+        container.hideLabel();
 }
 
 // Asks an auto-hiding dock to stay visible while the pointer is in the

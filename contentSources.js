@@ -3,6 +3,7 @@
 
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import St from 'gi://St';
 import * as Mpris from 'resource:///org/gnome/shell/ui/mpris.js';
 
 import {playerBelongsToApp} from './mediaMatch.js';
@@ -61,7 +62,9 @@ export class MediaSource {
 
     destroy() {
         this._source.disconnectObject(this);
-        this._source.destroy?.(); // the 47 section is a widget
+        // MprisSource is a plain GObject; GNOME 47's MediaSection is a widget.
+        if (this._source instanceof St.Widget)
+            this._source.destroy();
         this._source = null;
     }
 }
